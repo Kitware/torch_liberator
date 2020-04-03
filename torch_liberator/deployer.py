@@ -26,7 +26,7 @@ Example:
     >>> from torchvision import models
 
     >>> print('--- DEFINE A MODEL ---')
-    >>> model = models.alexnet(pretrained=True)
+    >>> model = models.alexnet(pretrained=False)  # false for test speed
     >>> initkw = dict(num_classes=1000)  # not all models nicely supply this
     >>> model._initkw = initkw
 
@@ -315,30 +315,15 @@ class DeployedModel(ub.NiceRepr):
         >>> # Test the train folder as the model deployment
         >>> train_dpath = _demodata_trained_dpath()
         >>> self = DeployedModel(train_dpath)
-        >>> model_ = self.model_definition()
-        >>> initializer_ = self.initializer_definition()
-        >>> model = model_[0](**model_[1])
-        >>> assert initializer_[1].get('fpath', None) is not None, 'initializer isnt setup correctly'
-        >>> initializer = initializer_[0](**initializer_[1])
-        >>> initializer(model)
+        >>> model = self.load_model()
         ...
         >>> print('model.__module__ = {!r}'.format(model.__module__))
-
-        # >>> if six.PY3:
-        # ...     assert model.__module__ == 'ToyNet2d_2a3f49'
-        # ... else:
-        # ...     assert model.__module__ == 'ToyNet2d_d573a3'
 
     Example:
         >>> # Test the zip file as the model deployment
         >>> zip_fpath = _demodata_zip_fpath()
         >>> self = DeployedModel(zip_fpath)
-        >>> model_ = self.model_definition()
-        >>> initializer_ = self.initializer_definition()
-        >>> model = model_[0](**model_[1])
-        >>> assert initializer_[1].get('fpath', None) is not None, 'initializer isnt setup correctly'
-        >>> initializer = initializer_[0](**initializer_[1])
-        >>> initializer(model)
+        >>> model = self.load_model()
         ...
         >>> # NOTE: the module name should be consistent, but due to
         >>> # small library changes it often changes, so we are permissive
@@ -476,19 +461,11 @@ class DeployedModel(ub.NiceRepr):
         model_ = (model_cls, initkw)
         return model_
 
-    def initializer_definition(self):
-        # FIXME: netharn dependency
-        import netharn as nh
-        initializer_ = (nh.initializers.Pretrained,
-                        {'fpath': self.info['snap_fpath']})
-        return initializer_
-
     def train_info(self):
-        import netharn as nh
-        # FIXME: netharn dependency
+        from torch_liberator.util import util_zip
         train_info_fpath = self.info.get('train_info_fpath', None)
         if train_info_fpath is not None:
-            train_info = json.load(nh.util.zopen(train_info_fpath, 'r'))
+            train_info = json.load(util_zip.zopen(train_info_fpath, 'r'))
         else:
             train_info = None
         return train_info
@@ -500,27 +477,12 @@ class DeployedModel(ub.NiceRepr):
         model_cls, model_kw = self.model_definition()
         model = model_cls(**model_kw)
 
-        if True:
-            # Always load models onto the CPU first
-            # import netharn as nh
-            model = model.to('cpu')
-            # devices = {k: item.device for k, item in model.state_dict().items()}
-            # nh.XPU.from_data(model)
+        # Always load models onto the CPU first
+        model = model.to('cpu')
 
-        # TODO: load directly from instead of using initializer self.info['snap_fpath']?
-        # Actually we can't because we lose the zopen stuff. Its probably ok
-        # To depend on netharn a little bit.
-        # import torch
-        # info = self.unpack_info()
-        # state_dict = torch.load(self.info['snap_fpath'])
-        # model.load_state_dict()
-
-        initializer_ = self.initializer_definition()
-        initializer = initializer_[0](**initializer_[1])
-
-        assert model is not None
-
-        initializer(model)
+        from torch_liberator.initializer import Pretrained
+        initializer = Pretrained(fpath=self.info['snap_fpath'])
+        initializer.forward(model)
         return model
 
     @classmethod
@@ -650,7 +612,7 @@ def _demodata_toy_harn():
     import netharn as nh
     hyper = nh.HyperParams(**{
         'workdir'     : ub.ensure_app_cache_dir('torch_liberator/tests/deploy'),
-        'name'        : 'deploy_demo_static',
+        'nice'        : 'deploy_demo_static',
         'xpu'         : nh.XPU.coerce('cpu'),
         'datasets'    : {'train': nh.data.ToyData2d(size=3, rng=0)},
         'loaders'     : {'batch_size': 64},
