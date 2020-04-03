@@ -612,7 +612,7 @@ def _demodata_toy_harn():
     import netharn as nh
     hyper = nh.HyperParams(**{
         'workdir'     : ub.ensure_app_cache_dir('torch_liberator/tests/deploy'),
-        'name'        : 'deploy_demo_static',
+        'nice'        : 'deploy_demo_static',
         'xpu'         : nh.XPU.coerce('cpu'),
         'datasets'    : {'train': nh.data.ToyData2d(size=3, rng=0)},
         'loaders'     : {'batch_size': 64},
