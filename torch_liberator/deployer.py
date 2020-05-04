@@ -61,7 +61,8 @@ def deploy(model, fpath, initkw=None, export_modules=[]):
     Args:
         model (torch.Module): this is a torch model, which ideally is
             statically parsable. The value of modgt
-        fpath (str): file path to the deployfile
+
+        fpath (str): file path to the deployfile to be written
 
         initkw: overwrite model._initkw if it exists, otherwise you must
             specify it here. These are the args used to create the instance of
@@ -307,6 +308,28 @@ def _package_deploy2(dpath, info, name=None):
 class DeployedModel(ub.NiceRepr):
     """
     Can setup an initializer and model from a deployed zipfile or a train path
+
+    TODO:
+        NEEDS TO BE REDESIGNED
+
+        Optional Inputs:
+
+            * Train info metadata files
+
+        Possible Inputs:
+
+            * An model instance
+
+            * An model file and a weights file.
+
+            * An deploy file
+
+        Needs Netharn:
+            * A training dpath (can infer model and weights file from this)
+
+            * A weights file (can infer model file from this)
+
+            * A model file (can infer weights file from this)
 
     CommandLine:
         xdoctest -m torch_liberator.deployer DeployedModel
