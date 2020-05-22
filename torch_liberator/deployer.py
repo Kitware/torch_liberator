@@ -22,6 +22,7 @@ CommandLine:
 
 
 Example:
+    >>> from torch_liberator.deployer import *
     >>> import torch_liberator
     >>> from torchvision import models
 
@@ -34,6 +35,7 @@ Example:
     >>> zip_fpath = torch_liberator.deploy(model, 'test-deploy.zip')
 
     >>> print('--- LOAD THE DEPLOYED MODEL ---')
+    >>> from torch_liberator.deployer import DeployedModel
     >>> loader = DeployedModel(zip_fpath)
     >>> model = loader.load_model()
 
