@@ -3,14 +3,21 @@ Torch Liberator - Deploy PyTorch Models
 
 |GitlabCIPipeline| |GitlabCICoverage| |Pypi| |Downloads| 
 
-The main webpage for this project is: https://gitlab.kitware.com/computer-vision/torch_liberator
++------------------+------------------------------------------------------------+
+| Main Page        | https://gitlab.kitware.com/computer-vision/torch_liberator |
++------------------+------------------------------------------------------------+
+| Github Mirror    | https://github.com/Kitware/torch_liberator                 |
++------------------+------------------------------------------------------------+
+| Pypi             | https://pypi.org/project/torch_liberator                   |
++------------------+------------------------------------------------------------+
+
 
 Torch Liberator builds on the "liberator" library to statically extract pytorch
 code that defines a model's topology and bundle that with a pretrained weights
 file. This results in a single-file deployment package and can potentially
 remove dependencies on the codebase used to train the model.
 
-For more info on the base "liberator" package see: https://gitlab.kitware.com/python/liberator
+For more info on the base "liberator" package see: https://gitlab.kitware.com/python/liberator or https://github.com/Kitware/liberator
 
 Torch Liberator can also read these deployment files and create an instance of
 the model initialized with the correct pretrained weights.
