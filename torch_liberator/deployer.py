@@ -626,6 +626,25 @@ class DeployedModel(ub.NiceRepr):
             raise TypeError(type(arg))
         return deployed
 
+    def extract_snapshot(self, extract_dpath=None):
+        """
+        If the weights snapshot is part of a zipfile, extract it to disk
+        """
+        from torch_liberator.util.util_zip import split_archive
+        import zipfile
+        # Extract the snapshot fpath to disk
+        snap_fpath = self.info['snap_fpath']
+        archive_fpath, internal = split_archive(snap_fpath)
+        if archive_fpath is None:
+            raise Exception('deployed snapshot is not in an archive')
+        if extract_dpath is None:
+            extract_dpath = ub.ensure_app_cache_dir('torch_liberator/extracted')
+        with zipfile.ZipFile(archive_fpath, 'r') as myzip:
+            myzip.extract(internal, extract_dpath)
+        temp_fpath = join(extract_dpath, internal)
+        assert exists(temp_fpath)
+        return temp_fpath
+
 
 def _demodata_zip_fpath():
     zip_path = DeployedModel(_demodata_trained_dpath()).package()
