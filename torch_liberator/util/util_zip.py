@@ -14,11 +14,12 @@ def split_archive(fpath):
     If fpath specifies a file inside a zipfile, it breaks it into two parts the
     path to the zipfile and the internal path in the zipfile.
 
-    fpath = '/'
-    split_archive('/a/b/foo.zip/bar.txt')
-    split_archive('/a/b/foo.zip/baz/bar.txt')
-    split_archive('/a/b/foo.zip/baz/biz.zip/bar.txt')
-    split_archive('/a/b/foo.zip/baz/biz.zip/bar.py')
+    Example:
+        >>> split_archive('/a/b/foo.txt')
+        >>> split_archive('/a/b/foo.zip/bar.txt')
+        >>> split_archive('/a/b/foo.zip/baz/bar.txt')
+        >>> split_archive('/a/b/foo.zip/baz/biz.zip/bar.txt')
+        >>> split_archive('/a/b/foo.zip/baz/biz.zip/bar.py')
     """
     pat = '(.zip[' + re.escape(os.path.sep) + '/:])'
     parts = re.split(pat, fpath, flags=re.IGNORECASE)
