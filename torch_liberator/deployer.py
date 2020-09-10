@@ -38,8 +38,6 @@ Example:
     >>> from torch_liberator.deployer import DeployedModel
     >>> loader = DeployedModel(zip_fpath)
     >>> model = loader.load_model()
-
-
 """
 from __future__ import absolute_import, division, print_function, unicode_literals
 import glob
