@@ -4,6 +4,11 @@ We are currently working on porting this changelog to the specifications in
 [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Version 0.0.5 - Unreleased
+
+### Added
+* Added `cli` for manually making deployed zip files
+
 
 ## Version 0.0.4 - Unreleased
 
@@ -19,4 +24,3 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Added
 * Initial version
 
-## Version 0.0.5 - Unreleased
