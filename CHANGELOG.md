@@ -9,6 +9,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Added
 * Added `cli` for manually making deployed zip files
 
+### Changed
+* Removed Python 2.7 and 3.5 Support.
+
 
 ## Version 0.0.4 - Unreleased
 
