@@ -11,6 +11,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 * Removed Python 2.7 and 3.5 Support.
+* The first part in the deployed name is now based on the netharn run "name"
+  rather than the name of the model class
+
+### Fixed
+* Support new netharn checkpoints dir
 
 
 ## Version 0.0.4 - Unreleased
