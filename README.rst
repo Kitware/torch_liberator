@@ -62,6 +62,88 @@ if your keyword arguments all exist as member variables of the class,
 torch_liberator tries to be smart and infer what initkw should be).
 
 
+Partial State Loading
+---------------------
+
+New in ``0.1.0`` torch liberator now exposes a public ``load_partial_state``
+function, which does it best to "shove" weights from one model into another
+model. There are several methods to compute associations between layer names in
+one model to layer names in another, the most general being the "embedding"
+method, and the slightly more structured "isomorphism" option.
+
+
+Have you ever had the scenario where you use one model as a sub-model in a
+bigger network? Then you had to load pretrained subnetwork state into that
+bigger model? 
+
+The latest version of ``torch_liberator.load_patial_state`` can handle this by
+solving a maximum-common-subtree-isomorphism problem. This computes the largest
+possible mapping between the two state dictionaries that share consistent
+suffixes.
+
+.. code:: python 
+
+    >>> import torchvision
+    >>> import torch
+    >>> import torch_liberator
+    >>> resnet50 = torchvision.models.resnet50()
+    >>> class CustomModel(torch.nn.Module):
+    >>>     def __init__(self):
+    >>>         super().__init__()
+    >>>         self.module = resnet50
+    >>>         self.extra = torch.nn.Linear(1, 1)
+    >>> # Directly load resnet50 state into a model that has it as an embedded subnetwork
+    >>> model = CustomModel()
+    >>> model_state_dict = resnet50.state_dict()
+    >>> # load partial state returns information about what it did
+    >>> info = torch_liberator.load_partial_state(model, model_state_dict, association='isomorphism', verbose=1)
+    >>> print(len(info['seen']['full_add']))
+    >>> print(len(info['self_unset']))
+    >>> print(len(info['other_unused']))
+    320
+    2
+    0
+    
+
+It can also handle loading common state between two models that share some
+underlying structure.
+
+.. code:: python 
+
+    >>> import torchvision
+    >>> import torch
+    >>> import torch_liberator
+    >>> resnet50 = torchvision.models.resnet50()
+    >>> class CustomModel1(torch.nn.Module):
+    >>>     def __init__(self):
+    >>>         super().__init__()
+    >>>         self.module = resnet50
+    >>>         self.custom_model1_layer = torch.nn.Linear(1, 1)
+    >>> class CustomModel2(torch.nn.Module):
+    >>>     def __init__(self):
+    >>>         super().__init__()
+    >>>         self.backbone = resnet50
+    >>>         self.custom_model2_layer = torch.nn.Linear(1, 1)
+    >>> # Load as much of model1 state into model2 as possible
+    >>> model1 = CustomModel1()
+    >>> model2 = CustomModel2()
+    >>> model2_state_dict = model2.state_dict()
+    >>> # load partial state returns information about what it did
+    >>> info = torch_liberator.load_partial_state(model1, model2_state_dict, association='isomorphism', verbose=1)
+    >>> print(len(info['seen']['full_add']))
+    >>> print(len(info['seen']['skipped']))
+    >>> print(len(info['self_unset']))
+    >>> print(len(info['other_unused']))
+    320
+    2
+    2
+    2
+    
+
+Also, if the sizes of the tensor don't quite fit, they will be mangled, i.e.
+"shoved-in" as best as possible. See the docstring for more detail.
+
+
 .. |Pypi| image:: https://img.shields.io/pypi/v/torch_liberator.svg
    :target: https://pypi.python.org/pypi/torch_liberator
 

@@ -53,11 +53,10 @@ def load_partial_state(model, model_state_dict, leftover=None,
         but you had a pretrained weight file with keys that looked like:
         `module.layer1.conv.weight`?
 
-        The latest version of
-        `torch_liberator.initializer.load_patial_state` can handle this by
-        solving a maximum-common-subtree-isomorphism problem. This computes the
-        largest possible mapping between the two state dictionaries that share
-        consistent suffixes.
+        The latest version of `torch_liberator.load_patial_state` can handle
+        this by solving a maximum-common-subtree-isomorphism problem. This
+        computes the largest possible mapping between the two state
+        dictionaries that share consistent suffixes.
 
         >>> # This means you can load an off-the-shelf unmodified pretrained resnet50
         >>> # where the keys might look something like this:
