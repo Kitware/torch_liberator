@@ -166,11 +166,77 @@ def native_mb_python_tag(plat_impl=None, version_info=None):
     return mb_tag
 
 
+def clean():
+    import ubelt as ub
+    import os
+    import glob
+    from os.path import dirname, join
+
+    modname = 'torch_liberator'
+    repodir = dirname(os.path.realpath(__file__))
+
+    toremove = []
+    for root, dnames, fnames in os.walk(repodir):
+
+        if os.path.basename(root) == modname + '.egg-info':
+            toremove.append(root)
+            del dnames[:]
+
+        if os.path.basename(root) == '__pycache__':
+            toremove.append(root)
+            del dnames[:]
+
+        if os.path.basename(root) == '_ext':
+            # Remove torch extensions
+            toremove.append(root)
+            del dnames[:]
+
+        if os.path.basename(root) == 'build':
+            # Remove python c extensions
+            if len(dnames) == 1 and dnames[0].startswith('temp.'):
+                toremove.append(root)
+                del dnames[:]
+
+        # Remove simple pyx inplace extensions
+        for fname in fnames:
+            if fname.endswith('.pyc'):
+                toremove.append(join(root, fname))
+            if fname.endswith(('.so', '.c', '.o')):
+                if fname.split('.')[0] + '.pyx' in fnames:
+                    toremove.append(join(root, fname))
+
+    def enqueue(d):
+        if exists(d) and d not in toremove:
+            toremove.append(d)
+
+    for d in glob.glob(join(repodir, 'torch_liberator/_nx_ext_v2/*.pkl')):
+        enqueue(d)
+
+    for d in glob.glob(join(repodir, 'torch_liberator/_nx_ext_v2/*.pkl.meta')):
+        enqueue(d)
+
+    for d in glob.glob(join(repodir, 'torch_liberator/_nx_ext_v2/*.cpp')):
+        enqueue(d)
+
+    for d in glob.glob(join(repodir, 'torch_liberator/_nx_ext_v2/*.so')):
+        enqueue(d)
+
+    enqueue(join(repodir, 'torch_liberator.egg-info'))
+    enqueue(join(repodir, 'pip-wheel-metadata'))
+
+    for dpath in toremove:
+        ub.delete(dpath, verbose=1)
+
+
 NAME = 'torch_liberator'
 VERSION = parse_version('torch_liberator/__init__.py')
 
 
 if __name__ == '__main__':
+    if 'clean' in sys.argv:
+        # hack
+        clean()
+        # sys.exit(0)
     setup(
         name=NAME,
         version=VERSION,
