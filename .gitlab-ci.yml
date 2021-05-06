@@ -375,6 +375,21 @@ stages:
 ### JOBS ###
 # Define the actual jobs
 
+# ---------------
+# Python 3.9 Jobs
+
+build/cp37-cp379-linux:
+    <<: 
+        - *build_template
+    image:
+        python:3.9
+
+test_full/cp37-cp379-linux:
+    <<: 
+        - *test_full_template
+    image:
+        python:3.9
+
 
 # ---------------
 # Python 3.8 Jobs
