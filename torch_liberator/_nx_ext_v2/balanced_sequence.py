@@ -400,4 +400,3 @@ def random_balanced_sequence(
             container_type=container_type,
         )
     return seq, open_to_close
-

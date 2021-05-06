@@ -262,12 +262,12 @@ def _cython_lcse_backend(error="ignore", verbose=0):
     -----------
     xdoctest -m balanced_embedding _cython_lcse_backend
     """
-    from _nx_ext_v2._autojit import import_module_from_pyx
+    from torch_liberator._nx_ext_v2._autojit import import_module_from_pyx
     from os.path import dirname
     import os
 
     # Toggle comments depending on the desired autojit default
-    NETWORKX_AUTOJIT = os.environ.get("NETWORKX_AUTOJIT", "")
+    # NETWORKX_AUTOJIT = os.environ.get("NETWORKX_AUTOJIT", "")
     NETWORKX_AUTOJIT = not os.environ.get("NETWORKX_NO_AUTOJIT", "")
 
     module = import_module_from_pyx(
