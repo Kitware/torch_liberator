@@ -94,3 +94,10 @@ ENV/
 profile_output.*
 _skbuild
 pip-wheel-metadata/
+
+
+*.pkl
+*.pkl.meta
+torch_liberator/_nx_ext_v2/balanced_isomorphism_cython.cpp
+torch_liberator/_nx_ext_v2/balanced_embedding_cython.cpp
+pip-wheel-metadata/
