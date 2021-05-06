@@ -241,7 +241,7 @@ stages:
         - python -V  # Print out python version for debugging
 
     script: 
-        - python setup.py bdist_wheel --universal
+        - python setup.py bdist_wheel 
 
     cache:
         paths:
