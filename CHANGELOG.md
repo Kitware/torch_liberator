@@ -5,6 +5,26 @@ We are currently working on porting this changelog to the specifications in
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## Version 0.1.0 - Unreleased
+
+### Added
+* Ported the maximum common subtree isomorphism building associations in `load_partial_state`.
+
+
+## Version 0.0.5 - Unreleased
+
+### Added
+* Added `cli` for manually making deployed zip files
+
+### Changed
+* Removed Python 2.7 and 3.5 Support.
+* The first part in the deployed name is now based on the netharn run "name"
+  rather than the name of the model class
+
+### Fixed
+* Support new netharn checkpoints dir
+
+
 ## Version 0.0.4 - Unreleased
 
 ### Added
@@ -18,3 +38,4 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 * Initial version
+

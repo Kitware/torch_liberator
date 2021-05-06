@@ -271,6 +271,8 @@ stages:
         - python -V  # Print out python version for debugging
         - pip install -r requirements.txt
         - pip install .  
+        # FIXME: we should start from a docker iamge that already has LibGL setup
+        - apt update && apt install libgl1-mesa-glx -y && rm -rf /var/lib/apt/lists/*  
 
     script: 
         - ./run_tests.py
@@ -373,6 +375,21 @@ stages:
 ### JOBS ###
 # Define the actual jobs
 
+# ---------------
+# Python 3.9 Jobs
+
+build/cp37-cp379-linux:
+    <<: 
+        - *build_template
+    image:
+        python:3.9
+
+test_full/cp37-cp379-linux:
+    <<: 
+        - *test_full_template
+    image:
+        python:3.9
+
 
 # ---------------
 # Python 3.8 Jobs
@@ -439,30 +456,30 @@ test_full/cp36-cp36m-linux:
 # ---------------
 # Python 3.5 Jobs
 
-build/cp35-cp35m-linux:
-    <<: 
-        - *build_template
-    image:
-        python:3.5
+#build/cp35-cp35m-linux:
+#    <<: 
+#        - *build_template
+#    image:
+#        python:3.5
 
-test_full/cp35-cp35m-linux:
-    <<: 
-        - *test_full_template
-    image:
-        python:3.5
+#test_full/cp35-cp35m-linux:
+#    <<: 
+#        - *test_full_template
+#    image:
+#        python:3.5
 
 
 # ---------------
 # Python 2.7 Jobs
 
-build/cp27-cp27mu-linux:
-    <<: 
-        - *build_template
-    image:
-        python:2.7
+#build/cp27-cp27mu-linux:
+#    <<: 
+#        - *build_template
+#    image:
+#        python:2.7
 
-test_full/cp27-cp27mu-linux:
-    <<: 
-        - *test_full_template
-    image:
-        python:2.7
+#test_full/cp27-cp27mu-linux:
+#    <<: 
+#        - *test_full_template
+#    image:
+#        python:2.7

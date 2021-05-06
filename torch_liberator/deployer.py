@@ -38,8 +38,6 @@ Example:
     >>> from torch_liberator.deployer import DeployedModel
     >>> loader = DeployedModel(zip_fpath)
     >>> model = loader.load_model()
-
-
 """
 from __future__ import absolute_import, division, print_function, unicode_literals
 import glob
@@ -107,9 +105,21 @@ def existing_snapshots(train_dpath):
     # NOTE: Specific to netharn directory structure
     import parse
     snapshot_dpath = join(train_dpath, 'torch_snapshots/')
-    prev_states = sorted(glob.glob(join(snapshot_dpath, '_epoch_*.pt')))
-    snapshots = {parse.parse('{}_epoch_{num:d}.pt', path).named['num']: path
-                 for path in prev_states}
+    snapshots = {}
+    if exists(snapshot_dpath):
+        prev_states = sorted(glob.glob(join(snapshot_dpath, '_epoch_*.pt')))
+        snapshots.update({
+            parse.parse('{}_epoch_{num:d}.pt', path).named['num']: path
+            for path in prev_states})
+
+    snapshot_dpath = join(train_dpath, 'checkpoints/')
+    if exists(snapshot_dpath):
+        prev_states = sorted(glob.glob(join(snapshot_dpath, '_epoch_*.pt')))
+        snapshots.update({
+            parse.parse('{}_epoch_{num:d}.pt', path).named['num']: path
+            for path in prev_states})
+
+    snapshot_dpath = join(train_dpath, 'checkpoints/')
     return snapshots
 
 
@@ -217,6 +227,8 @@ def unpack_model_info(path):
 def _make_package_name2(info):
     """
     Construct a unique and descriptive name for the deployment
+
+    This generally relies on netharn style info
     """
     snap_fpath = info['snap_fpath']
     model_fpath = info['model_fpath']
@@ -224,11 +236,20 @@ def _make_package_name2(info):
 
     if train_info_fpath and exists(train_info_fpath):
         train_info = json.load(open(train_info_fpath, 'r'))
-        model_name = train_info['hyper']['model'][0].split('.')[-1]
-        train_hash = ub.hash_data(train_info['train_id'], hasher='sha512',
-                                  base='abc', types=True)[0:8]
+        # model_name = train_info['hyper']['model'][0].split('.')[-1]
+        if 'name' in train_info:
+            run_name = train_info['name']
+        elif 'nice' in train_info:
+            run_name = train_info['nice']
+        else:
+            run_name = 'UNKNOWN-RUN'
+        if 'train_hashid' in train_info:
+            train_hash = train_info['train_hashid']
+        else:
+            train_hash = ub.hash_data(train_info['train_id'], hasher='sha512',
+                                      base='abc', types=True)[0:8]
     else:
-        model_name = os.path.splitext(os.path.basename(model_fpath))[0]
+        run_name = os.path.splitext(os.path.basename(model_fpath))[0]
         train_hash = 'UNKNOWN-TRAINID'
         print('WARNING: Train info metadata does not exist')
 
@@ -244,8 +265,8 @@ def _make_package_name2(info):
     weights_hash = ub.hash_file(snap_fpath, base='abc',
                                 hasher='sha512')[0:6].upper()
 
-    deploy_name = 'deploy_{model}_{trainid}_{epoch}_{weights}'.format(
-        model=model_name, trainid=train_hash, epoch=epoch,
+    deploy_name = 'deploy_{run}_{trainid}_{epoch}_{weights}'.format(
+        run=run_name, trainid=train_hash, epoch=epoch,
         weights=weights_hash)
     return deploy_name
 
@@ -263,7 +284,7 @@ def _package_deploy2(dpath, info, name=None):
 
     Ignore:
         dpath = '/home/joncrall/.cache/netharn/tests/_package_custom'
-        path = '/home/joncrall/work/opir/fit/nice/_Sim3-kw6-99-finetune_ML3D_BEST_2018-9-20_LR1e-4_f2_vel0.0_hn0.25_bs64_nr5.0'
+        path = '/home/joncrall/work/opir/fit/name/_Sim3-kw6-99-finetune_ML3D_BEST_2018-9-20_LR1e-4_f2_vel0.0_hn0.25_bs64_nr5.0'
         info = unpack_model_info(path)
         zipfpath = _package_deploy2(dpath, info)
 
@@ -354,7 +375,7 @@ class DeployedModel(ub.NiceRepr):
         >>> # small library changes it often changes, so we are permissive
         >>> # with this got/want test
         >>> print('model.__module__ = {!r}'.format(model.__module__))
-        model.__module__ = 'deploy_ToyNet2d_..._.../ToyNet2d_...'
+        model.__module__ = 'deploy_demo_liberator_static_..._.../ToyNet2d_...'
 
         model.__module__ = 'deploy_ToyNet2d_mhuhweia_000_.../ToyNet2d_...'
 
@@ -364,59 +385,6 @@ class DeployedModel(ub.NiceRepr):
         self.path = path
         self._model = None
         self._info = None
-
-    @classmethod
-    def custom(DeployedModel, snap_fpath, model, initkw=None, train_info_fpath=None):
-        """
-        Create a deployed model even if the model wasnt trained with FitHarn
-
-        This just requires specifying a bit more information, which FitHarn
-        would have tracked.
-
-        Args:
-            snap_fpath (PathLike):
-                path to the exported (snapshot) weights file
-
-            model (PathLike or nn.Module): can either be
-                (1) a path to model topology (created via `export_model_code`)
-                (2) the model class or an instance of the class
-
-            initkw (Dict): if model is a class or instance, then
-                you must pass the keyword arguments used to construct it.
-
-            train_info_fpath (PathLike, optional):
-                path to a json file containing additional training metadata
-
-        Example:
-            >>> # Setup raw components
-            >>> train_dpath = _demodata_trained_dpath()
-            >>> deployed = DeployedModel(train_dpath)
-            >>> snap_fpath = deployed.info['snap_fpath']
-            >>> model, initkw = deployed.model_definition()
-            >>> train_info_fpath = deployed.info['train_info_fpath']
-            >>> # Past raw components to custom
-            >>> self = DeployedModel.custom(snap_fpath, model, initkw)
-            >>> dpath = ub.ensure_app_cache_dir('torch_liberator', 'tests/_package_custom')
-            >>> self.package(dpath)
-        """
-        if isinstance(model, six.string_types):
-            model_fpath = model
-            if initkw is not None:
-                raise ValueError('initkw not used when model is a path')
-        else:
-            import tempfile
-            from torch_liberator import exporter
-            dpath = tempfile.mkdtemp()
-            model_fpath = exporter.export_model_code(dpath, model, initkw=initkw)
-
-        _info = {
-            'model_fpath': model_fpath,
-            'snap_fpath': snap_fpath,
-            'train_info_fpath': train_info_fpath,
-        }
-        self = DeployedModel(None)
-        self._info = _info
-        return self
 
     def __nice__(self):
         return self.__json__()
@@ -463,6 +431,12 @@ class DeployedModel(ub.NiceRepr):
         return unpack_model_info(self.path)
 
     def model_definition(self):
+        """
+        Return the model class definition and the initkw use to construct it
+
+        Returns:
+            Tuple[type, dict]: (model_cls, initkw)
+        """
         model_fpath = self.info['model_fpath']
         module = ub.import_module_from_path(model_fpath)
 
@@ -487,6 +461,11 @@ class DeployedModel(ub.NiceRepr):
         return model_
 
     def train_info(self):
+        """
+        Load any json metadata stored with the deployed model.
+
+        This is the data referenced by `train_info_fpath`.
+        """
         from torch_liberator.util import util_zip
         train_info_fpath = self.info.get('train_info_fpath', None)
         if train_info_fpath is not None:
@@ -496,6 +475,12 @@ class DeployedModel(ub.NiceRepr):
         return train_info
 
     def load_model(self):
+        """
+        Return an instance of the deployed model.
+
+        If this structure contains a preconstructed instance, it is simply
+        returned, otherwise a new instance of the model is created.
+        """
         if self._model is not None:
             return self._model
 
@@ -505,10 +490,33 @@ class DeployedModel(ub.NiceRepr):
         # Always load models onto the CPU first
         model = model.to('cpu')
 
+        # TODO: need to update the load_partial_state function
         from torch_liberator.initializer import Pretrained
         initializer = Pretrained(fpath=self.info['snap_fpath'])
         initializer.forward(model)
         return model
+
+    def extract_snapshot(self, extract_dpath=None):
+        """
+        If the weights snapshot is part of a zipfile, extract it to disk
+
+        Returns:
+            str : the path to the extracted weights
+        """
+        from torch_liberator.util.util_zip import split_archive
+        import zipfile
+        # Extract the snapshot fpath to disk
+        snap_fpath = self.info['snap_fpath']
+        archive_fpath, internal = split_archive(snap_fpath)
+        if archive_fpath is None:
+            raise Exception('deployed snapshot is not in an archive')
+        if extract_dpath is None:
+            extract_dpath = ub.ensure_app_cache_dir('torch_liberator/extracted')
+        with zipfile.ZipFile(archive_fpath, 'r') as myzip:
+            myzip.extract(internal, extract_dpath)
+        temp_fpath = join(extract_dpath, internal)
+        assert exists(temp_fpath)
+        return temp_fpath
 
     @classmethod
     def ensure_mounted_model(cls, deployed, xpu=None, log=print):
@@ -626,24 +634,58 @@ class DeployedModel(ub.NiceRepr):
             raise TypeError(type(arg))
         return deployed
 
-    def extract_snapshot(self, extract_dpath=None):
+    @classmethod
+    def custom(DeployedModel, snap_fpath, model, initkw=None, train_info_fpath=None):
         """
-        If the weights snapshot is part of a zipfile, extract it to disk
+        Create a deployed model even if the model wasnt trained with FitHarn
+
+        This just requires specifying a bit more information, which FitHarn
+        would have tracked.
+
+        Args:
+            snap_fpath (PathLike):
+                path to the exported (snapshot) weights file
+
+            model (PathLike or nn.Module): can either be
+                (1) a path to model topology (created via `export_model_code`)
+                (2) the model class or an instance of the class
+
+            initkw (Dict): if model is a class or instance, then
+                you must pass the keyword arguments used to construct it.
+
+            train_info_fpath (PathLike, optional):
+                path to a json file containing additional training metadata
+
+        Example:
+            >>> # Setup raw components
+            >>> train_dpath = _demodata_trained_dpath()
+            >>> deployed = DeployedModel(train_dpath)
+            >>> snap_fpath = deployed.info['snap_fpath']
+            >>> model, initkw = deployed.model_definition()
+            >>> train_info_fpath = deployed.info['train_info_fpath']
+            >>> # Past raw components to custom
+            >>> self = DeployedModel.custom(snap_fpath, model, initkw)
+            >>> dpath = ub.ensure_app_cache_dir('torch_liberator', 'tests/_package_custom')
+            >>> self.package(dpath)
         """
-        from torch_liberator.util.util_zip import split_archive
-        import zipfile
-        # Extract the snapshot fpath to disk
-        snap_fpath = self.info['snap_fpath']
-        archive_fpath, internal = split_archive(snap_fpath)
-        if archive_fpath is None:
-            raise Exception('deployed snapshot is not in an archive')
-        if extract_dpath is None:
-            extract_dpath = ub.ensure_app_cache_dir('torch_liberator/extracted')
-        with zipfile.ZipFile(archive_fpath, 'r') as myzip:
-            myzip.extract(internal, extract_dpath)
-        temp_fpath = join(extract_dpath, internal)
-        assert exists(temp_fpath)
-        return temp_fpath
+        if isinstance(model, six.string_types):
+            model_fpath = model
+            if initkw is not None:
+                raise ValueError('initkw not used when model is a path')
+        else:
+            import tempfile
+            from torch_liberator import exporter
+            dpath = tempfile.mkdtemp()
+            model_fpath = exporter.export_model_code(dpath, model, initkw=initkw)
+
+        _info = {
+            'model_fpath': model_fpath,
+            'snap_fpath': snap_fpath,
+            'train_info_fpath': train_info_fpath,
+        }
+        self = DeployedModel(None)
+        self._info = _info
+        return self
 
 
 def _demodata_zip_fpath():
@@ -656,7 +698,7 @@ def _demodata_toy_harn():
     import netharn as nh
     hyper = nh.HyperParams(**{
         'workdir'     : ub.ensure_app_cache_dir('torch_liberator/tests/deploy'),
-        'nice'        : 'deploy_demo_static',
+        'name'        : 'demo_liberator_static',
         'xpu'         : nh.XPU.coerce('cpu'),
         'datasets'    : {'train': nh.data.ToyData2d(size=3, rng=0)},
         'loaders'     : {'batch_size': 64},
