@@ -72,7 +72,7 @@ def longest_common_balanced_isomorphism(
 
     See Also
     --------
-    * This function is used to implement :func:`netharn.initializers._nx_ext_v2.tree_isomorphism.maximum_common_ordered_subtree_isomorphism`
+    * This function is used to implement :func:`_nx_ext_v2.tree_isomorphism.maximum_common_ordered_subtree_isomorphism`
     * A similar function that relaxes isomorphisms to embeddings is :func:`networkx.algorithms.strength.balanced_sequence.longest_common_balanced_sequence`
 
     Example
@@ -714,9 +714,9 @@ def _cython_lcsi_backend(error="ignore", verbose=0):
 
     CommandLine
     -----------
-    xdoctest -m netharn.initializers._nx_ext_v2.balanced_isomorphism _cython_lcsi_backend
+    xdoctest -m torch_liberator._nx_ext_v2.balanced_isomorphism _cython_lcsi_backend
     """
-    from netharn.initializers._nx_ext_v2._autojit import import_module_from_pyx
+    from torch_liberator._nx_ext_v2._autojit import import_module_from_pyx
     from os.path import dirname
     import os
 

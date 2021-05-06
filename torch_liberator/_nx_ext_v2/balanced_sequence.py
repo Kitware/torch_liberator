@@ -367,8 +367,8 @@ def random_balanced_sequence(
     >>> print("seq = {!r}".format(seq))
     seq = '([[{{[]{[]}}{}()}]])'
     """
-    from netharn.initializers._nx_ext_v2.tree_embedding import tree_to_seq
-    from netharn.initializers._nx_ext_v2.utils import random_ordered_tree
+    from torch_liberator._nx_ext_v2.tree_embedding import tree_to_seq
+    from torch_liberator._nx_ext_v2.utils import random_ordered_tree
     from networkx.utils import create_py_random_state
 
     # Create a random otree and then convert it to a balanced sequence
@@ -401,13 +401,3 @@ def random_balanced_sequence(
         )
     return seq, open_to_close
 
-
-if __name__ == "__main__":
-    """
-    CommandLine
-    ------------
-    xdoctest -m netharn.initializers._nx_ext_v2.balanced_sequence all
-    """
-    import xdoctest
-
-    xdoctest.doctest_module(__file__)

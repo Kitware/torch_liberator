@@ -1,7 +1,7 @@
 """
 Core python implementations for the longest common balanced sequence
 subproblem, which is used by
-:mod:`netharn.initializers._nx_ext_v2.tree_embedding`.
+:mod:`_nx_ext_v2.tree_embedding`.
 """
 import operator
 from .balanced_sequence import (
@@ -66,7 +66,7 @@ def longest_common_balanced_embedding(
 
     See Also
     --------
-    * This function is used to implement :func:`netharn.initializers._nx_ext_v2.tree_embedding.maximum_common_ordered_subtree_embedding`
+    * This function is used to implement :func:`_nx_ext_v2.tree_embedding.maximum_common_ordered_subtree_embedding`
 
     Notes
     -----
@@ -260,9 +260,9 @@ def _cython_lcse_backend(error="ignore", verbose=0):
 
     CommandLine
     -----------
-    xdoctest -m netharn.initializers._nx_ext_v2.balanced_embedding _cython_lcse_backend
+    xdoctest -m balanced_embedding _cython_lcse_backend
     """
-    from netharn.initializers._nx_ext_v2._autojit import import_module_from_pyx
+    from _nx_ext_v2._autojit import import_module_from_pyx
     from os.path import dirname
     import os
 
@@ -500,13 +500,3 @@ def _lcse_recurse(
         _memo[key] = found
         return found
 
-
-if __name__ == "__main__":
-    """
-    CommandLine
-    ------------
-    xdoctest -m netharn.initializers._nx_ext_v2.balanced_embedding all
-    """
-    import xdoctest
-
-    xdoctest.doctest_module(__file__)

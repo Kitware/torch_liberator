@@ -40,14 +40,6 @@ def import_module_from_pyx(fname, dpath, error="raise", autojit=True, verbose=1)
     -------
     ModuleType | None : module
         Returns the compiled and imported module if possible, otherwise None
-
-    Ignore
-    ------
-    from netharn.initializers._nx_ext_v2._autojit import *
-    fname = "balanced_embedding_cython.pyx"
-    dpath = ub.expandpath('$HOME/code/netharn/netharn/initializers/_nx_ext_v2')
-    module = import_module_from_pyx(fname, dpath, error="ignore", verbose=1)
-    print('module = {!r}'.format(module))
     """
     pyx_fpath = join(dpath, fname)
     if not exists(pyx_fpath):

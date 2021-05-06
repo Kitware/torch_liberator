@@ -15,22 +15,22 @@ CommandLine
 -----------
 # Explicitly build this cython module 
 # NOTE: cd to networkx repo root before running
-cythonize -a -i netharn/initializers/_nx_ext_v2/balanced_isomorphism_cython.pyx
+cythonize -a -i torch_liberator/_nx_ext_v2/balanced_isomorphism_cython.pyx
 
 # With xdoctest this should work if networkx is installed (and this file is
 # distributed with it)
-xdoctest -m netharn.initializers._nx_ext_v2.balanced_isomorphism _cython_lcs_backend
+xdoctest -m torch_liberator._nx_ext_v2.balanced_isomorphism _cython_lcs_backend
 
 # Which will then let you run these examples and benchmarks
-xdoctest -m netharn.initializers._nx_ext_v2.balanced_isomorphism_cython list
-xdoctest -m netharn.initializers._nx_ext_v2.balanced_isomorphism_cython __doc__:0 --bench
+xdoctest -m torch_liberator._nx_ext_v2.balanced_isomorphism_cython list
+xdoctest -m torch_liberator._nx_ext_v2.balanced_isomorphism_cython __doc__:0 --bench
 
 
 Example
 -------
->>> from netharn.initializers._nx_ext_v2.balanced_isomorphism_cython import _lcsi_iter_cython, IdentityDictCython
->>> from netharn.initializers._nx_ext_v2.balanced_isomorphism import _lcsi_iter
->>> from netharn.initializers._nx_ext_v2.balanced_sequence import random_balanced_sequence
+>>> from torch_liberator._nx_ext_v2.balanced_isomorphism_cython import _lcsi_iter_cython, IdentityDictCython
+>>> from torch_liberator._nx_ext_v2.balanced_isomorphism import _lcsi_iter
+>>> from torch_liberator._nx_ext_v2.balanced_sequence import random_balanced_sequence
 >>> import operator
 >>> seq1, open_to_close1 = random_balanced_sequence(300, item_type='paren')
 >>> seq2, open_to_close2 = random_balanced_sequence(300, item_type='paren')
@@ -49,8 +49,8 @@ Benchmark
 >>> # xdoctest: +REQUIRES(module:timerit)
 >>> print((chr(10) * 3)+ ' --- BEGIN BENCHMARK ---')
 >>> import timerit
->>> from netharn.initializers._nx_ext_v2 import balanced_sequence as bseq
->>> from netharn.initializers._nx_ext_v2 import balanced_isomorphism as biso
+>>> from torch_liberator._nx_ext_v2 import balanced_sequence as bseq
+>>> from torch_liberator._nx_ext_v2 import balanced_isomorphism as biso
 >>> seq_len = 200
 >>> seq1, open_to_close1 = bseq.random_balanced_sequence(seq_len, item_type='paren', container_type='str')
 >>> seq2, open_to_close2 = bseq.random_balanced_sequence(seq_len, item_type='paren', container_type='str')

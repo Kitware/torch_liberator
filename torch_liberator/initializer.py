@@ -737,9 +737,6 @@ def _best_prefix_transform(set1, target_set2):
 
 def maximum_common_ordered_subpaths(paths1, paths2, sep='.', mode='embedding'):
     """
-    CommandLine:
-        xdoctest -m /home/joncrall/code/netharn/netharn/initializers/functional.py maximum_common_ordered_subpaths:0 --profile && cat profile_output.txt
-        xdoctest -m /home/joncrall/code/netharn/netharn/initializers/functional.py maximum_common_ordered_subpaths:0
 
     Example:
         >>> import torchvision

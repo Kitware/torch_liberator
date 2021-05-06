@@ -57,7 +57,7 @@ def maximum_common_ordered_subtree_embedding(
 
     impl : str
         Determines the backend implementation. Defaults to "auto".
-        See :func:`netharn.initializers._nx_ext_v2.balanced_embedding.longest_common_balanced_embedding`
+        See :func:`_nx_ext_v2.balanced_embedding.longest_common_balanced_embedding`
         for details. Other valid options are "iter", "recurse", and
         "iter-cython".
 
@@ -87,7 +87,7 @@ def maximum_common_ordered_subtree_embedding(
     See Also
     --------
     * For example usage see ``examples/applications/filesystem_embedding.py``
-    * Core backends are in :mod:`netharn.initializers._nx_ext_v2.balanced_embedding.longest_common_balanced_embedding`
+    * Core backends are in :mod:`_nx_ext_v2.balanced_embedding.longest_common_balanced_embedding`
 
     Example
     -------
