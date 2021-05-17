@@ -11,17 +11,37 @@ Torch Liberator - Deploy PyTorch Models
 | Pypi             | https://pypi.org/project/torch_liberator                   |
 +------------------+------------------------------------------------------------+
 
+Torch Liberator is a Python module containing a set of tools for reading and
+writing relevant parts of deep networks.
+
+Typically, when moving a deep-network trained with torch, you have to keep
+track of the entire codebase that defined the model file in addition to the
+checkpoint file containing the learned weights. Torch Liberator contains tools
+to extract relevant source code and bundle it with weights and serializing it
+into a single-file deployment.
+
+Installation
+------------
+
+.. code:: bash
+
+    pip install torch_liberator
+
+    # OR with a specific branch
+
+    pip install git+https://gitlab.kitware.com/computer-vision/torch_liberator.git@master
+
+
+Stand-alone Single-File Model Deployments
+-----------------------------------------
 
 Torch Liberator builds on the "liberator" library to statically extract pytorch
 code that defines a model's topology and bundle that with a pretrained weights
 file. This results in a single-file deployment package and can potentially
 remove dependencies on the codebase used to train the model.
 
-For more info on the base "liberator" package see: https://gitlab.kitware.com/python/liberator or https://github.com/Kitware/liberator
-
 Torch Liberator can also read these deployment files and create an instance of
 the model initialized with the correct pretrained weights.
-
 
 The API is ok, but it does need improvement. However, the current version is in
 a working state. There aren't any high level docs, but there are a lot of
@@ -60,6 +80,18 @@ The major weirdness right now, is you either have to explicitly define "initkw"
 deploy time, or you can set it as the ``_initkw`` attribute of your model (or
 if your keyword arguments all exist as member variables of the class,
 torch_liberator tries to be smart and infer what initkw should be).
+
+
+There is also a torch-liberator CLI that can be used to package a weight file,
+a python model file, and optional json metadata.
+
+.. code:: bash
+
+    python -m torch_liberator \
+        --model <path-to-the-liberated-py-file> \
+        --weights <path-to-the-torch-pth-weight-file> \
+        --info <path-to-train-info-json-file> \
+        --dst my_custom_deployfile.zip
 
 
 Partial State Loading

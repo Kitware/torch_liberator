@@ -20,6 +20,9 @@ def split_archive(fpath):
         >>> split_archive('/a/b/foo.zip/baz/bar.txt')
         >>> split_archive('/a/b/foo.zip/baz/biz.zip/bar.txt')
         >>> split_archive('/a/b/foo.zip/baz/biz.zip/bar.py')
+
+    TODO:
+        should this work for the case where there is nothing after the zip?
     """
     pat = '(.zip[' + re.escape(os.path.sep) + '/:])'
     parts = re.split(pat, fpath, flags=re.IGNORECASE)
@@ -120,13 +123,29 @@ class zopen(ub.NiceRepr):
     def __del__(self):
         self._cleanup()
 
+    @ub.memoize_method
+    def _split_archive(self):
+        fpath = self.fpath
+        archivefile, internal = split_archive(fpath)
+        return archivefile, internal
+
+    @property
+    def _temporary_extract(self):
+        # If we need data to be seekable, then we must extract it to a
+        # temporary file first.
+        archivefile, internal = self._split_archive()
+        self._temp_dpath = tempfile.mkdtemp()
+        myzip = zipfile.ZipFile(archivefile, 'r')
+        temp_fpath = join(self._temp_dpath, internal)
+        myzip.extract(internal, self._temp_dpath)
+        return temp_fpath
+
     def _open(self):
         _handle = None
         if exists(self.fpath):
             _handle = open(self.fpath, self.mode)
         elif '.zip/' in self.fpath or '.zip' + os.path.sep in self.fpath:
-            fpath = self.fpath
-            archivefile, internal = split_archive(fpath)
+            archivefile, internal = self._split_archive()
             myzip = zipfile.ZipFile(archivefile, 'r')
             if self._seekable:
                 # If we need data to be seekable, then we must extract it to a

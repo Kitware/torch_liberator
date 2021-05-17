@@ -42,7 +42,7 @@ from liberator import closer
 __all__ = ['export_model_code']
 
 
-__pt_export_version__ = '0.6.0'
+__pt_export_version__ = '0.7.0'
 
 
 def export_model_code(dpath, model, initkw=None, export_modules=[]):
