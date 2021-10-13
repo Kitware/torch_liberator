@@ -32,68 +32,6 @@ Installation
     pip install git+https://gitlab.kitware.com/computer-vision/torch_liberator.git@master
 
 
-Stand-alone Single-File Model Deployments
------------------------------------------
-
-Torch Liberator builds on the "liberator" library to statically extract pytorch
-code that defines a model's topology and bundle that with a pretrained weights
-file. This results in a single-file deployment package and can potentially
-remove dependencies on the codebase used to train the model.
-
-Torch Liberator can also read these deployment files and create an instance of
-the model initialized with the correct pretrained weights.
-
-The API is ok, but it does need improvement. However, the current version is in
-a working state. There aren't any high level docs, but there are a lot of
-docstrings and doctests. The example here gives a good overview of the code by
-extracting the AlexNet model from torchvision.
-
-
-.. code:: python 
-
-    >>> import torch_liberator
-    >>> from torch_liberator.deployer import DeployedModel
-    >>> from torchvision import models
-
-    >>> print('--- DEFINE A MODEL ---')
-    >>> model = models.alexnet(pretrained=False)  # false for test speed
-    >>> initkw = dict(num_classes=1000)  # not all models nicely supply this
-    >>> model._initkw = initkw
-    --- DEFINE A MODEL ---
-
-    >>> print('--- DEPLOY THE MODEL ---')
-    >>> zip_fpath = torch_liberator.deploy(model, 'test-deploy.zip')
-    --- DEPLOY THE MODEL ---
-    [DEPLOYER] Deployed zipfpath=/tmp/tmpeqd3y_rx/test-deploy.zip
-    
-
-    >>> print('--- LOAD THE DEPLOYED MODEL ---')
-    >>> loader = DeployedModel(zip_fpath)
-    >>> model = loader.load_model()
-    --- LOAD THE DEPLOYED MODEL ---
-    Loading data onto None from <zopen(<_io.BufferedReader name='/tmp/tmpg1kln3kw/test-deploy/deploy_snapshot.pt'> mode=rb)>
-    Pretrained weights are a perfect fit
-    
-
-The major weirdness right now, is you either have to explicitly define "initkw"
-(which are the keyword arguments used to create an instance of our model) at
-deploy time, or you can set it as the ``_initkw`` attribute of your model (or
-if your keyword arguments all exist as member variables of the class,
-torch_liberator tries to be smart and infer what initkw should be).
-
-
-There is also a torch-liberator CLI that can be used to package a weight file,
-a python model file, and optional json metadata.
-
-.. code:: bash
-
-    python -m torch_liberator \
-        --model <path-to-the-liberated-py-file> \
-        --weights <path-to-the-torch-pth-weight-file> \
-        --info <path-to-train-info-json-file> \
-        --dst my_custom_deployfile.zip
-
-
 Partial State Loading
 ---------------------
 
@@ -170,10 +108,102 @@ underlying structure.
     2
     2
     2
+
+
+.. code:: python 
+
+
+    >>> import torchvision
+    >>> import torch_liberator
+    >>> #
+    >>> faster_rcnn = torchvision.models.detection.faster_rcnn.fasterrcnn_resnet50_fpn()
+    >>> resnet50 = torchvision.models.resnet50(pretrained=True)
+    >>> state_dict = resnet50.state_dict()
+    >>> # Load partial state return a dictionary that tells you how well it did
+    >>> info = torch_liberator.load_partial_state(faster_rcnn, state_dict, verbose=0, association='embedding')
+    >>> print(ub.map_vals(len, info['seen']))
+    >>> print(ub.map_vals(len, ub.dict_diff(info, ['seen'])))
+    {'full_add': 265, 'skipped': 55}
+    {'other_unused': 55, 'self_unset': 30}
+
+    >>> # Load partial state return a dictionary that tells you how well it did
+    >>> info = torch_liberator.load_partial_state(faster_rcnn, state_dict, verbose=0, association='isomorphism')
+    >>> print(ub.map_vals(len, info['seen']))
+    >>> print(ub.map_vals(len, ub.dict_diff(info, ['seen'])))
+    {'full_add': 265, 'skipped': 55}
+    {'other_unused': 55, 'self_unset': 30}
+    
     
 
 Also, if the sizes of the tensor don't quite fit, they will be mangled, i.e.
 "shoved-in" as best as possible. See the docstring for more detail.
+
+
+Stand-alone Single-File Model Deployments
+-----------------------------------------
+
+Originally the main purpose of ``torch_liberator`` was to build standalone
+torch packages that contained both the model code and the model weight. It
+still does that but ``torch.package`` new in torch 1.9, might be a better
+solution moving forward.
+
+Torch Liberator builds on the "liberator" library to statically extract pytorch
+code that defines a model's topology and bundle that with a pretrained weights
+file. This results in a single-file deployment package and can potentially
+remove dependencies on the codebase used to train the model.
+
+Torch Liberator can also read these deployment files and create an instance of
+the model initialized with the correct pretrained weights.
+
+The API is ok, but it does need improvement. However, the current version is in
+a working state. There aren't any high level docs, but there are a lot of
+docstrings and doctests. The example here gives a good overview of the code by
+extracting the AlexNet model from torchvision.
+
+
+.. code:: python 
+
+    >>> import torch_liberator
+    >>> from torch_liberator.deployer import DeployedModel
+    >>> from torchvision import models
+
+    >>> print('--- DEFINE A MODEL ---')
+    >>> model = models.alexnet(pretrained=False)  # false for test speed
+    >>> initkw = dict(num_classes=1000)  # not all models nicely supply this
+    >>> model._initkw = initkw
+    --- DEFINE A MODEL ---
+
+    >>> print('--- DEPLOY THE MODEL ---')
+    >>> zip_fpath = torch_liberator.deploy(model, 'test-deploy.zip')
+    --- DEPLOY THE MODEL ---
+    [DEPLOYER] Deployed zipfpath=/tmp/tmpeqd3y_rx/test-deploy.zip
+    
+
+    >>> print('--- LOAD THE DEPLOYED MODEL ---')
+    >>> loader = DeployedModel(zip_fpath)
+    >>> model = loader.load_model()
+    --- LOAD THE DEPLOYED MODEL ---
+    Loading data onto None from <zopen(<_io.BufferedReader name='/tmp/tmpg1kln3kw/test-deploy/deploy_snapshot.pt'> mode=rb)>
+    Pretrained weights are a perfect fit
+    
+
+The major weirdness right now, is you either have to explicitly define "initkw"
+(which are the keyword arguments used to create an instance of our model) at
+deploy time, or you can set it as the ``_initkw`` attribute of your model (or
+if your keyword arguments all exist as member variables of the class,
+torch_liberator tries to be smart and infer what initkw should be).
+
+
+There is also a torch-liberator CLI that can be used to package a weight file,
+a python model file, and optional json metadata.
+
+.. code:: bash
+
+    python -m torch_liberator \
+        --model <path-to-the-liberated-py-file> \
+        --weights <path-to-the-torch-pth-weight-file> \
+        --info <path-to-train-info-json-file> \
+        --dst my_custom_deployfile.zip
 
 
 .. |Pypi| image:: https://img.shields.io/pypi/v/torch_liberator.svg
