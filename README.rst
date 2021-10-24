@@ -3,13 +3,18 @@ Torch Liberator - Deploy PyTorch Models
 
 |GitlabCIPipeline| |GitlabCICoverage| |Pypi| |Downloads| 
 
-+------------------+------------------------------------------------------------+
-| Main Page        | https://gitlab.kitware.com/computer-vision/torch_liberator |
-+------------------+------------------------------------------------------------+
-| Github Mirror    | https://github.com/Kitware/torch_liberator                 |
-+------------------+------------------------------------------------------------+
-| Pypi             | https://pypi.org/project/torch_liberator                   |
-+------------------+------------------------------------------------------------+
++----------------------+------------------------------------------------------------+
+| Main Page            | https://gitlab.kitware.com/computer-vision/torch_liberator |
++----------------------+------------------------------------------------------------+
+| Github Mirror        | https://github.com/Kitware/torch_liberator                 |
++----------------------+------------------------------------------------------------+
+| Pypi                 | https://pypi.org/project/torch_liberator                   |
++----------------------+------------------------------------------------------------+
+| Torch Hackathon 2021 | `Google Slides`_                                           |
++------------------+----------------------------------------------------------------+
+
+.. _Youtube Video: https://www.youtube.com/watch?v=CUjCqOw_oFk
+.. _Google Slides: https://docs.google.com/presentation/d/1563XL-n7534QmktrkLSjVqX36z5uhjUFrPw8wIO6z1c
 
 Torch Liberator is a Python module containing a set of tools for reading and
 writing relevant parts of deep networks.

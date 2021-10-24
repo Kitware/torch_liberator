@@ -4,7 +4,7 @@ def example():
     >>> import torchvision
     >>> import torch_liberator
     >>> faster_rcnn = torchvision.models.detection.fasterrcnn_resnet50_fpn()
-    >>> model = torchvision.models.model(pretrained=True)
+    >>> model = torchvision.models.resnet50(pretrained=True)
     >>> # Return a dictionary that tells what load_partial_state did
     >>> info = torch_liberator.load_partial_state(
     ...     faster_rcnn, model.state_dict(),

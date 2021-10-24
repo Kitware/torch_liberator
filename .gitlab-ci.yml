@@ -270,7 +270,7 @@ stages:
         - pip install pip setuptools -U
         - python -V  # Print out python version for debugging
         - pip install -r requirements.txt
-        - pip install .  
+        - pip install kwimage[headless]  
         # FIXME: we should start from a docker iamge that already has LibGL setup
         - apt update && apt install libgl1-mesa-glx -y && rm -rf /var/lib/apt/lists/*  
 
@@ -379,13 +379,13 @@ stages:
 # ---------------
 # Python 3.9 Jobs
 
-build/cp37-cp379-linux:
+build/cp39-cp39-linux:
     <<: 
         - *build_template
     image:
         python:3.9
 
-test_full/cp37-cp379-linux:
+test_full/cp39-cp39-linux:
     <<: 
         - *test_full_template
     image:

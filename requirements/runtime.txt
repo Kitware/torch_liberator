@@ -1,4 +1,6 @@
-ubelt
-liberator
-six
-torch
+# python ~/local/tools/supported_python_versions_pip.py ubelt
+
+ubelt >= 0.8.2
+liberator>=0.0.1
+six >= 1.11.0
+torch>=1.4.0
