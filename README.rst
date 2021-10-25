@@ -11,7 +11,7 @@ Torch Liberator - Deploy PyTorch Models
 | Pypi                 | https://pypi.org/project/torch_liberator                   |
 +----------------------+------------------------------------------------------------+
 | Torch Hackathon 2021 | `Google Slides`_                                           |
-+------------------+----------------------------------------------------------------+
++----------------------+------------------------------------------------------------+
 
 .. _Youtube Video: https://www.youtube.com/watch?v=CUjCqOw_oFk
 .. _Google Slides: https://docs.google.com/presentation/d/1563XL-n7534QmktrkLSjVqX36z5uhjUFrPw8wIO6z1c
