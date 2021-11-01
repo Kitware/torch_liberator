@@ -5,13 +5,21 @@ We are currently working on porting this changelog to the specifications in
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## Version 0.1.0 - Unreleased
+## Version 0.1.1 - Unreleased
+
+### Changed
+
+* Using scikit-build and CMake to build cython modules and publishing wheels
+  instead of hacky autojit solutions.
+
+
+## Version 0.1.0 - Released 2021-05-06
 
 ### Added
 * Ported the maximum common subtree isomorphism building associations in `load_partial_state`.
 
 
-## Version 0.0.5 - Unreleased
+## Version 0.0.5 - Released 2021-05-06
 
 ### Added
 * Added `cli` for manually making deployed zip files
@@ -25,7 +33,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 * Support new netharn checkpoints dir
 
 
-## Version 0.0.4 - Unreleased
+## Version 0.0.4 - Released 2021-05-06
 
 ### Added
 * Added `extract_snapshot` method to `DeployedModel`

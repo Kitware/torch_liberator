@@ -681,11 +681,11 @@ def generate_all_decomp_nocat(seq, open_to_close, open_to_node=None):
     >>> open_to_close = {'[': ']', '{': '}', '(': ')'}
     >>> all_decomp = generate_all_decomp_nocat(seq, open_to_close)
     >>> print('all_decomp = {}'.format(pprint.pformat(all_decomp)))
+
     all_decomp = {'(){}': ('(', '(', ')', '', '{}'),
      '{(){}}': ('{', '{', '}', '(){}', ''),
      '{{(){}}}': ('{', '{', '}', '{(){}}', ''),
      '{}': ('{', '{', '}', '', '')}
-
     """
     if open_to_node is None:
         open_to_node = IdentityDict()
@@ -716,20 +716,30 @@ def _cython_lcsi_backend(error="ignore", verbose=0):
     -----------
     xdoctest -m torch_liberator._nx_ext_v2.balanced_isomorphism _cython_lcsi_backend
     """
-    from torch_liberator._nx_ext_v2._autojit import import_module_from_pyx
-    from os.path import dirname
-    import os
+    # from torch_liberator._nx_ext_v2._autojit import import_module_from_pyx
+    # from os.path import dirname
+    # import os
 
-    # Toggle comments depending on the desired autojit default
-    NETWORKX_AUTOJIT = os.environ.get("NETWORKX_AUTOJIT", "")
-    NETWORKX_AUTOJIT = not os.environ.get("NETWORKX_NO_AUTOJIT", "")
+    # # Toggle comments depending on the desired autojit default
+    # NETWORKX_AUTOJIT = os.environ.get("NETWORKX_AUTOJIT", "")
+    # NETWORKX_AUTOJIT = not os.environ.get("NETWORKX_NO_AUTOJIT", "")
 
-    module = import_module_from_pyx(
-        "balanced_isomorphism_cython.pyx",
-        dpath=dirname(__file__),
-        error=error,
-        autojit=NETWORKX_AUTOJIT,
-        verbose=verbose,
-    )
-    balanced_embedding_cython = module
-    return balanced_embedding_cython
+    try:
+        # Attempt to use the module build with CMake
+        from . import balanced_isomorphism_cython
+    except Exception:
+        if error == "ignore":
+            balanced_isomorphism_cython = None
+        elif error == "raise":
+            raise
+        else:
+            raise KeyError(error)
+        # module = import_module_from_pyx(
+        #     "balanced_isomorphism_cython.pyx",
+        #     dpath=dirname(__file__),
+        #     error=error,
+        #     autojit=NETWORKX_AUTOJIT,
+        #     verbose=verbose,
+        # )
+        # balanced_isomorphism_cython = module
+    return balanced_isomorphism_cython

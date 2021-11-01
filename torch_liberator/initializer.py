@@ -762,6 +762,16 @@ def maximum_common_ordered_subpaths(paths1, paths2, sep='.', mode='embedding'):
                 with timer:
                     maximum_common_ordered_subpaths(paths1, paths2, mode='isomorphism')
 
+
+        from torch_liberator.initializer import *  # NOQA
+        tree1 = paths_to_otree(paths1, sep)
+        from graphid.util import show_nx
+        import kwplot
+        kwplot.autompl()
+        import networkx as nx
+        nx.set_node_attributes(tree1, name='label', values='')
+        show_nx(tree1, with_labels=False, layoutkw={'prog': 'neato'})
+
     Example:
         >>> rng = None
         >>> import kwarray
@@ -831,40 +841,15 @@ def maximum_common_ordered_subpaths(paths1, paths2, sep='.', mode='embedding'):
         >>> mapping = ub.dzip(subpaths1, subpaths2)
         >>> print('mapping = {}'.format(ub.repr2(mapping, nl=1)))
     """
-    import networkx as nx
     from torch_liberator import _nx_ext_v2
 
     # the longest common balanced sequence problem
-    def _affinity(tok1, tok2):
-        score = 0
-        for t1, t2 in zip(tok1[::-1], tok2[::-1]):
-            if t1 == t2:
-                score += 1
-            else:
-                break
-        return score
-
-        # return tok1[-1] == tok2[-1]
-    node_affinity = _affinity
+    node_affinity = _common_suffix_affinity
     # import operator
     # eq = operator.eq
 
-    def paths_to_otree(paths):
-        tree = nx.OrderedDiGraph()
-        for path in sorted(paths):
-            parts = tuple(path.split(sep))
-            node_path = []
-            for i in range(1, len(parts) + 1):
-                node = parts[0:i]
-                tree.add_node(node)
-                tree.nodes[node]['label'] = node[-1]
-                node_path.append(node)
-            for u, v in ub.iter_window(node_path, 2):
-                tree.add_edge(u, v)
-        return tree
-
-    tree1 = paths_to_otree(paths1)
-    tree2 = paths_to_otree(paths2)
+    tree1 = paths_to_otree(paths1, sep)
+    tree2 = paths_to_otree(paths2, sep)
 
     if mode == 'embedding':
         subtree1, subtree2, value = _nx_ext_v2.maximum_common_ordered_subtree_embedding(tree1, tree2, node_affinity=node_affinity)
@@ -876,3 +861,33 @@ def maximum_common_ordered_subpaths(paths1, paths2, sep='.', mode='embedding'):
     subpaths1 = [sep.join(node) for node in subtree1.nodes if subtree1.out_degree[node] == 0]
     subpaths2 = [sep.join(node) for node in subtree2.nodes if subtree2.out_degree[node] == 0]
     return subpaths1, subpaths2
+
+
+def paths_to_otree(paths, sep):
+    import networkx as nx
+    tree = nx.OrderedDiGraph()
+    for path in sorted(paths):
+        parts = tuple(path.split(sep))
+        node_path = []
+        for i in range(1, len(parts) + 1):
+            node = parts[0:i]
+            tree.add_node(node)
+            tree.nodes[node]['label'] = node[-1]
+            node_path.append(node)
+        for u, v in ub.iter_window(node_path, 2):
+            tree.add_edge(u, v)
+    return tree
+
+
+def _common_suffix_affinity(tok1, tok2):
+    """
+    weighting for maximum common subtree problem
+    """
+    # return tok1[-1] == tok2[-1]
+    score = 0
+    for t1, t2 in zip(tok1[::-1], tok2[::-1]):
+        if t1 == t2:
+            score += 1
+        else:
+            break
+    return score
