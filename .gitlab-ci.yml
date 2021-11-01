@@ -168,18 +168,23 @@ stages:
 ._install_strict_minimal_requirements: &_install_strict_minimal_requirements |-
     ./dev/make_strict_req.sh
     pip install -r requirements-strict/runtime.txt -r requirements-strict/tests.txt
+    # Hack in opencv for netharn-dependant tests
+    pip install opencv-python-headless==4.5.3.56
 
 ._install_strict_full_requirements: &_install_strict_full_requirements |-
     ./dev/make_strict_req.sh
     pip install -r requirements-strict/optional.txt -r requirements-strict/runtime.txt -r requirements-strict/tests.txt
+    pip install opencv-python-headless==4.5.3.56
 
     
 ._install_loose_minimal_requirements: &_install_loose_minimal_requirements |-
     pip install -r requirements/runtime.txt -r requirements/tests.txt
+    pip install opencv-python-headless>=4.5.3.56
 
 
 ._install_loose_full_requirements: &_install_loose_full_requirements |-
     pip install -r requirements/optional.txt -r requirements/runtime.txt -r requirements/tests.txt
+    pip install opencv-python-headless>=4.5.3.56
 
 
 ._run_tests_in_sandboxed_dir: &_run_tests_in_sandboxed_dir |-

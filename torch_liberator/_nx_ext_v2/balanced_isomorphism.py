@@ -728,7 +728,12 @@ def _cython_lcsi_backend(error="ignore", verbose=0):
         # Attempt to use the module build with CMake
         from . import balanced_isomorphism_cython
     except Exception:
-        raise
+        if error == "ignore":
+            balanced_isomorphism_cython = None
+        elif error == "raise":
+            raise
+        else:
+            raise KeyError(error)
         # module = import_module_from_pyx(
         #     "balanced_isomorphism_cython.pyx",
         #     dpath=dirname(__file__),

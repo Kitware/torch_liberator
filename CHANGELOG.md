@@ -7,6 +7,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Version 0.1.1 - Unreleased
 
+### Changed
+
+* Using scikit-build and CMake to build cython modules and publishing wheels
+  instead of hacky autojit solutions.
+
 
 ## Version 0.1.0 - Released 2021-05-06
 
