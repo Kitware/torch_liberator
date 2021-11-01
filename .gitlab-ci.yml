@@ -187,10 +187,15 @@ stages:
     pip install opencv-python-headless>=4.5.3.56
 
 
+# Hack to test the installed wheel. TODO: make run_tests work better in this case.
 ._run_tests_in_sandboxed_dir: &_run_tests_in_sandboxed_dir |-
-    # Hack to test the installed wheel. TODO: make run_tests work better in this case.
-    mkdir -p sandbox && cd sandbox && python -X faulthandler -m pytest --xdoctest-verbose=3 -s --cov-config ../.coveragerc --cov-report html --cov-report term --cov=torch_liberator --xdoc $(python -c "import ubelt; print(ubelt.modname_to_modpath('torch_liberator'))") ../tests
-
+    #mkdir -p sandbox && cd sandbox && python -X faulthandler -m pytest --xdoctest-verbose=3 -s --cov-config ../.coveragerc --cov-report html --cov-report term --cov=torch_liberator --xdoc $(python -c "import ubelt; print(ubelt.modname_to_modpath('torch_liberator'))") ../tests
+    mkdir -p sandbox 
+    cd sandbox 
+    PKG_MODPATH=$(python -c "import ubelt; print(ubelt.modname_to_modpath('torch_liberator'))")
+    # python -X faulthandler -m pytest --xdoctest-verbose=3 -s --cov-config ../.coveragerc --cov-report term --cov=torch_liberator --xdoc $PKG_MODPATH ../tests
+    # Option: Just the doctests 
+    python -X faulthandler -m xdoctest --verbose=3 $PKG_MODPATH
 
     
 ._test_full_script: &_test_full_script
