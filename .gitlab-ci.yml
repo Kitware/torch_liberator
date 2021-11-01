@@ -189,7 +189,7 @@ stages:
 
 ._run_tests_in_sandboxed_dir: &_run_tests_in_sandboxed_dir |-
     # Hack to test the installed wheel. TODO: make run_tests work better in this case.
-    mkdir -p sandbox && cd sandbox && pytest --xdoctest-verbose=3 -s --cov-config ../.coveragerc --cov-report html --cov-report term --cov=torch_liberator --xdoc $(python -c "import ubelt; print(ubelt.modname_to_modpath('torch_liberator'))") ../tests
+    mkdir -p sandbox && cd sandbox && python -X faulthandler -m pytest --xdoctest-verbose=3 -s --cov-config ../.coveragerc --cov-report html --cov-report term --cov=torch_liberator --xdoc $(python -c "import ubelt; print(ubelt.modname_to_modpath('torch_liberator'))") ../tests
 
 
     
@@ -644,3 +644,28 @@ deploy/py3-none-any:
     only:
         refs:
             - release
+
+
+.__local_docker_heredoc__:
+        - | 
+
+            # Commands to help developers debug pipelines on their local machine
+            # Grab the base docker image, (forwarding your ssh credentials), clone
+            # the torch_liberator repo, create the environment, and run the tests. 
+            docker login gitlab.kitware.com:4567
+
+            docker pull gitlab.kitware.com:4567/computer-vision/ci-docker/gl-python:3.9
+            docker run -v $PWD:/io:ro -it gitlab.kitware.com:4567/computer-vision/ci-docker/gl-python:3.9 bash
+            cd $HOME
+            git clone /io ./torch_liberator
+            cd torch_liberator
+
+            cd $HOME/torch_liberator
+            git checkout dev/flow15
+
+            # STRICT VARIANT
+            ./dev/make_strict_req.sh
+            pip install -r requirements-strict/runtime.txt -r requirements-strict/tests.txt
+            # Hack in opencv for netharn-dependant tests
+            pip install opencv-python-headless==4.5.3.56
+            pip install -e .
