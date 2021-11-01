@@ -1,14 +1,6 @@
 # flake8: noqa
 
 
-
-
-
-
-
-
-
-
 def example1():
     """
     >>> import torchvision
