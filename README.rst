@@ -25,9 +25,9 @@ checkpoint file containing the learned weights. Torch Liberator contains tools
 to extract relevant source code and bundle it with weights and serializing it
 into a single-file deployment.
 
-Note: as of torch 1.9, torch comes with a `torch.package https://pytorch.org/docs/stable/package.html`__ 
+Note: as of torch 1.9, torch comes with a `torch.package <https://pytorch.org/docs/stable/package.html>`__ 
 submodule which contains a method for saving model weights with model
-structure.  We recommend using `torch.package` over the single-file deployments
+structure.  We recommend using ``torch.package`` over the single-file deployments
 provided in this package. Thus the ``load_partial_state`` logic is the main
 code of interest provided in this module.
 
@@ -42,7 +42,7 @@ Installation
 
     # OR with a specific branch
 
-    pip install git+https://gitlab.kitware.com/computer-vision/torch_liberator.git@master
+    pip install git+https://gitlab.kitware.com/computer-vision/torch_liberator.git@main
 
 
 Partial State Loading
@@ -158,11 +158,11 @@ Stand-alone Single-File Model Deployments
 The original purpose of ``torch_liberator`` was to build standalone torch
 packages that contained both the model code and the model weight. It still does
 that but ``torch.package`` new in torch 1.9, might be a better solution moving
-forward. See `torch.package https://pytorch.org/docs/stable/package.html`__
+forward. See `torch.package <https://pytorch.org/docs/stable/package.html>`__
 for details.
 
 Torch Liberator builds on the
-`liberator https://gitlab.kitware.com/python/liberator`__ library to statically
+`liberator <https://gitlab.kitware.com/python/liberator>`__ library to statically
 extract pytorch code that defines a model's topology and bundle that with a
 pretrained weights file. This results in a single-file deployment package and
 can potentially remove dependencies on the codebase used to train the model.
@@ -231,12 +231,12 @@ a python model file, and optional json metadata.
     :target: http://torch_liberator.readthedocs.io/en/latest/
 
 .. # See: https://ci.appveyor.com/project/jon.crall/torch_liberator/settings/badges
-.. .. |Appveyor| image:: https://ci.appveyor.com/api/projects/status/py3s2d6tyfjc8lm3/branch/master?svg=true
-.. :target: https://ci.appveyor.com/project/jon.crall/torch_liberator/branch/master
+.. .. |Appveyor| image:: https://ci.appveyor.com/api/projects/status/py3s2d6tyfjc8lm3/branch/main?svg=true
+.. :target: https://ci.appveyor.com/project/jon.crall/torch_liberator/branch/main
 
-.. |GitlabCIPipeline| image:: https://gitlab.kitware.com/computer-vision/torch_liberator/badges/master/pipeline.svg
+.. |GitlabCIPipeline| image:: https://gitlab.kitware.com/computer-vision/torch_liberator/badges/main/pipeline.svg
    :target: https://gitlab.kitware.com/computer-vision/torch_liberator/-/jobs
 
-.. |GitlabCICoverage| image:: https://gitlab.kitware.com/computer-vision/torch_liberator/badges/master/coverage.svg?job=coverage
-    :target: https://gitlab.kitware.com/computer-vision/torch_liberator/commits/master
+.. |GitlabCICoverage| image:: https://gitlab.kitware.com/computer-vision/torch_liberator/badges/main/coverage.svg?job=coverage
+    :target: https://gitlab.kitware.com/computer-vision/torch_liberator/commits/main
 
