@@ -193,9 +193,10 @@ stages:
     mkdir -p sandbox 
     cd sandbox 
     PKG_MODPATH=$(python -c "import ubelt; print(ubelt.modname_to_modpath('torch_liberator'))")
-    # python -X faulthandler -m pytest --xdoctest-verbose=3 -s --cov-config ../.coveragerc --cov-report term --cov=torch_liberator --xdoc $PKG_MODPATH ../tests
-    # Option: Just the doctests 
-    python -X faulthandler -m xdoctest --verbose=3 $PKG_MODPATH
+    # Option 1: Use pytest with doctests and unittests
+    python -X faulthandler -m pytest --xdoctest-verbose=3 -s --cov-config ../.coveragerc --cov-report term --cov=torch_liberator --xdoc $PKG_MODPATH ../tests
+    # Option 2: Just the doctests 
+    #python -X faulthandler -m xdoctest --verbose=3 $PKG_MODPATH
 
     
 ._test_full_script: &_test_full_script
@@ -663,14 +664,43 @@ deploy/py3-none-any:
             docker run -v $PWD:/io:ro -it gitlab.kitware.com:4567/computer-vision/ci-docker/gl-python:3.9 bash
             cd $HOME
             git clone /io ./torch_liberator
-            cd torch_liberator
-
             cd $HOME/torch_liberator
-            git checkout dev/flow15
+
+            python --version  # Print out python version for debugging
+            python -m pip install virtualenv
+            python -m virtualenv venv
+            source venv/bin/activate
+            pip install pip -U
+            pip install setuptools -U
+            pip install pygments
+
+            python -V  # Print out python version for debugging
+            pip install virtualenv
+            virtualenv venv
+            source venv/bin/activate
+            pip install pip -U
+            pip install pip setuptools -U
+
+            export DISABLE_C_EXTENSIONS=1
+            DISABLE_C_EXTENSIONS=1 python setup.py bdist_wheel
+            DISABLE_C_EXTENSIONS=1 python setup.py sdist
+            ls dist
 
             # STRICT VARIANT
             ./dev/make_strict_req.sh
             pip install -r requirements-strict/runtime.txt -r requirements-strict/tests.txt
             # Hack in opencv for netharn-dependant tests
             pip install opencv-python-headless==4.5.3.56
-            pip install -e .
+
+            MB_PYTHON_TAG=py3-none-any
+            VERSION=$(python -c "import setup; print(setup.VERSION)")
+            BDIST_WHEEL_PATH=dist/torch_liberator-${VERSION}-${MB_PYTHON_TAG}.whl
+            pip install $BDIST_WHEEL_PATH
+
+            mkdir -p sandbox 
+            cd sandbox 
+            PKG_MODPATH=$(python -c "import ubelt; print(ubelt.modname_to_modpath('torch_liberator'))")
+            echo "PKG_MODPATH=$PKG_MODPATH"
+            # python -X faulthandler -m pytest --xdoctest-verbose=3 -s --cov-config ../.coveragerc --cov-report term --cov=torch_liberator --xdoc $PKG_MODPATH ../tests
+            # Option: Just the doctests 
+            python -X faulthandler -m xdoctest --verbose=3 $PKG_MODPATH
