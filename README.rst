@@ -10,10 +10,10 @@ Torch Liberator - Deploy PyTorch Models
 +----------------------+------------------------------------------------------------+
 | Pypi                 | https://pypi.org/project/torch_liberator                   |
 +----------------------+------------------------------------------------------------+
-| Torch Hackathon 2021 | `Google Slides`_                                           |
+| Torch Hackathon 2021 | `Youtube Video`_ and `Google Slides`_                      |
 +----------------------+------------------------------------------------------------+
 
-.. _Youtube Video: ### https://www.youtube.com/watch?v=CUjCqOw_oFk
+.. _Youtube Video: https://www.youtube.com/watch?v=GQqtn61iNsc
 .. _Google Slides: https://docs.google.com/presentation/d/1w9XHkPjtLRj29dw50WP0rSHRRlEfhksP_Sf8XldTSYE
 
 Torch Liberator is a Python module containing a set of tools for reading and
@@ -24,6 +24,14 @@ track of the entire codebase that defined the model file in addition to the
 checkpoint file containing the learned weights. Torch Liberator contains tools
 to extract relevant source code and bundle it with weights and serializing it
 into a single-file deployment.
+
+Note: as of torch 1.9, torch comes with a `torch.package https://pytorch.org/docs/stable/package.html`__ 
+submodule which contains a method for saving model weights with model
+structure.  We recommend using `torch.package` over the single-file deployments
+provided in this package. Thus the ``load_partial_state`` logic is the main
+code of interest provided in this module.
+
+
 
 Installation
 ------------
@@ -147,15 +155,17 @@ Also, if the sizes of the tensor don't quite fit, they will be mangled, i.e.
 Stand-alone Single-File Model Deployments
 -----------------------------------------
 
-Originally the main purpose of ``torch_liberator`` was to build standalone
-torch packages that contained both the model code and the model weight. It
-still does that but ``torch.package`` new in torch 1.9, might be a better
-solution moving forward.
+The original purpose of ``torch_liberator`` was to build standalone torch
+packages that contained both the model code and the model weight. It still does
+that but ``torch.package`` new in torch 1.9, might be a better solution moving
+forward. See `torch.package https://pytorch.org/docs/stable/package.html`__
+for details.
 
-Torch Liberator builds on the "liberator" library to statically extract pytorch
-code that defines a model's topology and bundle that with a pretrained weights
-file. This results in a single-file deployment package and can potentially
-remove dependencies on the codebase used to train the model.
+Torch Liberator builds on the
+`liberator https://gitlab.kitware.com/python/liberator`__ library to statically
+extract pytorch code that defines a model's topology and bundle that with a
+pretrained weights file. This results in a single-file deployment package and
+can potentially remove dependencies on the codebase used to train the model.
 
 Torch Liberator can also read these deployment files and create an instance of
 the model initialized with the correct pretrained weights.
