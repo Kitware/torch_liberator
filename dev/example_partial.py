@@ -1,21 +1,74 @@
+# flake8: noqa
 
-def example():
+
+
+
+
+
+
+
+
+
+def example1():
     """
     >>> import torchvision
     >>> import torch_liberator
+    >>> # Create two similar but different models
     >>> faster_rcnn = torchvision.models.detection.fasterrcnn_resnet50_fpn()
     >>> model = torchvision.models.resnet50(pretrained=True)
+
+    >>> faster_rcnn.load_state_dict(model.state_dict())
+
     >>> # Return a dictionary that tells what load_partial_state did
     >>> info = torch_liberator.load_partial_state(
     ...     faster_rcnn, model.state_dict(),
     ...     association='isomorphism')
+
     >>> print(ub.map_vals(len, info['seen']))
     >>> print(ub.map_vals(len, ub.dict_diff(info, ['seen'])))
     {'full_add': 265, 'skipped': 55}
     {'other_unused': 55, 'self_unset': 30}
+    """
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def example2():
+    """
     >>> # Load partial state return a dictionary that tells you how well it did
-    >>> info = torch_liberator.load_partial_state(faster_rcnn, state_dict, verbose=0, association='isomorphism')
+    >>> info = torch_liberator.load_partial_state(
+    >>>     faster_rcnn, state_dict, verbose=0, association='isomorphism')
     >>> print(ub.map_vals(len, info['seen']))
     >>> print(ub.map_vals(len, ub.dict_diff(info, ['seen'])))
     {'full_add': 265, 'skipped': 55}

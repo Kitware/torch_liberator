@@ -262,22 +262,27 @@ def _cython_lcse_backend(error="ignore", verbose=0):
     -----------
     xdoctest -m balanced_embedding _cython_lcse_backend
     """
-    from torch_liberator._nx_ext_v2._autojit import import_module_from_pyx
-    from os.path import dirname
-    import os
+    # from torch_liberator._nx_ext_v2._autojit import import_module_from_pyx
+    # from os.path import dirname
+    # import os
 
     # Toggle comments depending on the desired autojit default
     # NETWORKX_AUTOJIT = os.environ.get("NETWORKX_AUTOJIT", "")
-    NETWORKX_AUTOJIT = not os.environ.get("NETWORKX_NO_AUTOJIT", "")
+    # NETWORKX_AUTOJIT = not os.environ.get("NETWORKX_NO_AUTOJIT", "")
 
-    module = import_module_from_pyx(
-        "balanced_embedding_cython.pyx",
-        dpath=dirname(__file__),
-        error=error,
-        autojit=NETWORKX_AUTOJIT,
-        verbose=verbose,
-    )
-    balanced_embedding_cython = module
+    try:
+        # Attempt to use the module build with CMake
+        from . import balanced_embedding_cython
+    except Exception:
+        raise
+        # module = import_module_from_pyx(
+        #     "balanced_embedding_cython.pyx",
+        #     dpath=dirname(__file__),
+        #     error=error,
+        #     autojit=NETWORKX_AUTOJIT,
+        #     verbose=verbose,
+        # )
+        # balanced_embedding_cython = module
     return balanced_embedding_cython
 
 
@@ -499,4 +504,3 @@ def _lcse_recurse(
         found = (val, best)
         _memo[key] = found
         return found
-
