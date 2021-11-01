@@ -24,7 +24,6 @@ try:
     else:
         from skbuild import setup
 except ImportError:
-    raise
     setup = None
 
 
