@@ -18,189 +18,7 @@
 
         __doc__="""
 
-        ============
-        INSTRUCTIONS
-        ============
-
-        This file was designed to be used as a template. You can adapt it to
-        new projects with a few simple changes.  Namely perform the following
-        search and replaces.
-
-        ```bash
-        cat .gitlab-ci.yml | \
-            sed 's|utils|<YOUR-GROUP>|g' | \
-            sed 's|torch_liberator|<YOUR-REPO>|g' | \
-            sed 's|travis-ci-Erotemic|<YOUR-GPG-ID>|g' | \
-            sed 's|CI_KITWARE_SECRET|<YOUR_CI_SECRET>|g' | \
-            sed 's|gitlab.kitware.com|gitlab.your-instance.com|g' | \
-        tee /tmp/repl && colordiff .gitlab-ci.yml /tmp/repl
-        ```
-
-        To use this script you need the following configurations on your gitlab instance.
-
-        NOTES
-        -----
-
-        * This script will require matainence for new releases of Python
-
-        * Make sure you add Runners to your project 
-        https://gitlab.kitware.com/computer-vision/torch_liberator/-/settings/ci_cd 
-        in Runners-> Shared Runners
-        and Runners-> Available specific runners
-        
-
-        GITLAB SECRETS
-        --------------
-
-        Almost all of the stages in this pipeline can be performed on a local
-        machine (making it much easier to debug) as well as the gitlab-ci
-        machine. However, there are a handeful of required environment
-        variables which will contain sensitive information. These variables are
-
-        * TWINE_USERNAME - this is your pypi username
-            twine info is only needed if you want to automatically publish to pypi
-
-        * TWINE_PASSWORD - this is your pypi password 
-
-        * CI_KITWARE_SECRET - We will use this as a secret key to encrypt/decrypt gpg secrets 
-            This is only needed if you want to automatically sign published
-            wheels with a gpg key.
-
-        * GIT_PUSH_TOKEN - 
-            This is only needed if you want to automatically git-tag release branches.
-
-            Create a GIT_PUSH_TOKEN in User->Settings->Tokens, give it api and write permissions
-            see: https://gitlab.kitware.com/profile/personal_access_tokens
-            
-            Then add this as a secret variable here: https://gitlab.kitware.com/utils/torch_liberator/-/settings/ci_cd
-            Note the value of GIT_PUSH_TOKEN will look something like: "{token-name}:{token-password}"
-            For instance it may look like this: "git-push-token:62zutpzqga6tvrhklkdjqm"
-
-            References:
-                https://stackoverflow.com/questions/51465858/how-do-you-push-to-a-gitlab-repo-using-a-gitlab-ci-job
-
-        These should be added as secret variables in your Gitlab->CI->Variables settings.
-
-        Before you do this ensure that your master and release branch are marked as protected
-        and only editable by people that you trust. 
-        https://gitlab.kitware.com/utils/torch_liberator/-/settings/repository#js-protected-branches-settings
-
-        WARNING: If an untrusted actor gains the ability to write to a
-        protected branch, then they will be able to exfiltrate your secrets.
-
-        Once you have protected the master and release branch, can add these
-        variables as the following url
-        https://gitlab.kitware.com/utils/kwimage/-/settings/ci_cd 
-        
-        WARNING: These variables contain secret information. Ensure that these
-        the protected and masked settings are enabled when you create them.
-
-
-        ENCRYPTING SECRETS
-        ------------------
-
-        The following script demonstrates how to securely encrypt a secret GPG key. It is assumed that you have 
-        a file secret_loader.sh that looks like this
-
-        ```bash
-            source secretfile
-        ```
-
-        and then a secretfile that looks like this
-
-        ```bash
-            #!/bin/bash
-            echo /some/secret/file 
-
-            export TWINE_USERNAME=<pypi-username>
-            export TWINE_PASSWORD=<pypi-password>
-            export CI_KITWARE_SECRET="<a-very-long-secret-string>"
-            export GIT_PUSH_TOKEN='git-push-token:<token-password>'
-        ```
-
-        You should also make a secret_unloader.sh that points to a script that
-        unloads these secret variables from the environment.
-
-        Given this file-structure setup, you can then run the following
-        commands verbatim. Alternatively just populate the environment
-        variables and run line-by-line without creating the secret
-        loader/unloader scripts.
-        
-        ```bash
-        # THIS IS NOT EXECUTE ON THE CI, THIS IS FOR DEVELOPER REFERENCE
-        # ON HOW THE ENCRYPTED GPG KEYS ARE SETUP.
-        
-        # Load or generate secrets
-        source $(secret_loader.sh)
-        echo $CI_KITWARE_SECRET
-        echo $TWINE_USERNAME
-
-        # ADD RELEVANT VARIABLES TO GITLAB SECRET VARIABLES
-        # https://gitlab.kitware.com/utils/torch_liberator/-/settings/ci_cd
-        # Note that it is important to make sure that these variables are
-        # only decrpyted on protected branches by selecting the protected
-        # and masked option. Also make sure you have master and release
-        # branches protected.
-        # https://gitlab.kitware.com/utils/torch_liberator/-/settings/repository#js-protected-branches-settings
-
-        # HOW TO ENCRYPT YOUR SECRET GPG KEY
-        IDENTIFIER="travis-ci-Erotemic"
-        GPG_KEYID=$(gpg --list-keys --keyid-format LONG "$IDENTIFIER" | head -n 2 | tail -n 1 | awk '{print $1}' | tail -c 9)
-        echo "GPG_KEYID = $GPG_KEYID"
-
-        # Export plaintext gpg public keys, private keys, and trust info
-        mkdir -p dev
-        gpg --armor --export-secret-keys $GPG_KEYID > dev/ci_secret_gpg_key.pgp
-        gpg --armor --export $GPG_KEYID > dev/ci_public_gpg_key.pgp
-        gpg --export-ownertrust > dev/gpg_owner_trust
-
-        # Encrypt gpg keys and trust with CI secret
-        GLKWS=$CI_KITWARE_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -e -a -in dev/ci_public_gpg_key.pgp > dev/ci_public_gpg_key.pgp.enc
-        GLKWS=$CI_KITWARE_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -e -a -in dev/ci_secret_gpg_key.pgp > dev/ci_secret_gpg_key.pgp.enc
-        GLKWS=$CI_KITWARE_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -e -a -in dev/gpg_owner_trust > dev/gpg_owner_trust.enc
-        echo $GPG_KEYID > dev/public_gpg_key
-
-        # Test decrpyt
-        cat dev/public_gpg_key
-        GLKWS=$CI_KITWARE_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_public_gpg_key.pgp.enc 
-        GLKWS=$CI_KITWARE_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/gpg_owner_trust.enc 
-        GLKWS=$CI_KITWARE_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_secret_gpg_key.pgp.enc 
-
-        source $(secret_unloader.sh)
-
-        # Look at what we did, clean up, and add it to git
-        ls dev/*.enc
-        rm dev/gpg_owner_trust dev/*.pgp
-        git status
-        git add dev/*.enc
-        git add dev/public_gpg_key
-        ```
-
-
-        TEST GIT_PUSH_TOKEN 
-        -------------------
-
-        The following script tests if your GIT_PUSH_TOKEN environment variable is correctly setup.
-
-        ```bash
-        docker run -it ubuntu
-        apt update -y && apt install git -y
-        git clone https://gitlab.kitware.com/utils/torch_liberator.git
-        cd torch_liberator
-        # do sed twice to handle the case of https clone with and without a read token
-        git config user.email "ci@gitlab.kitware.com"
-        git config user.name "Gitlab-CI"
-        URL_HOST=$(git remote get-url origin | sed -e 's|https\?://.*@||g' | sed -e 's|https\?://||g')
-        echo "URL_HOST = $URL_HOST"
-        git tag "test-tag4"
-        git push --tags "https://${GIT_PUSH_TOKEN}@${URL_HOST}"
-
-        # Cleanup after you verify the tags shows up on the remote
-        git push --delete origin test-tag4
-        git tag --delete test-tag4
-        ```
-
-
+        docs moved to dev/setup_secrets
         """ # "  # hack for vim yml syntax highlighter
 
 stages:
@@ -213,20 +31,84 @@ stages:
 ### TEMPLATES ###
 # Define common templates using YAML anchors
 
+
+.cibuildwheel_template: &cibuildwheel_template
+    stage: 
+        build
+
+    tags:
+        # Tags define which runners will accept which jobs
+        - linux
+        - docker
+        - privileged
+
+    image: gitlab.kitware.com:4567/computer-vision/ci-docker/podman
+
+    script:
+        - podman --version
+        - podman info --debug
+        - python3 -m pip install git+https://github.com/Erotemic/cibuildwheel.git@dev/flow
+        - pwd
+        - ls -al
+        - export CIBW_SKIP="pp* cp27-* cp35-*"
+        - export CIBW_OCI_EXE="podman"
+        # NOTE: this requires that some mechanism exists in cibuildwheel to
+        # ignore this directory when it copys the repo into the container
+        - mkdir -p ".cache/containers/vfs-storage/"
+        - export CIBW_OCI_ROOT=$(realpath ".cache/containers/vfs-storage/")
+        - echo "CIBW_OCI_ROOT = $CIBW_OCI_ROOT"
+        - cibuildwheel --platform linux --print-build-identifiers
+        # - cibuildwheel --output-dir wheelhouse --platform linux --archs x86_64,i686,aarch64,ppc64le,s390x,universal2,arm64,x86,AMD64
+        - cibuildwheel --output-dir wheelhouse --platform linux
+        - ls $CIBW_OCI_ROOT
+        - ls wheelhouse
+
+    artifacts:
+        paths:
+            - wheelhouse/
+
+    # Contents of .cache/containers/vfs-storage are far too large to cache
+    # Not sure if it is possible to cache the download of the images
+    #cache:
+    #    paths:
+    #        - .cache/containers
+    #    TODO: can we use skopeo to cache the images?
+
 .common_template: &common_template
     tags:
         # Tags define which runners will accept which jobs
         - docker
         - linux
+        - build
 
     variables:
         # Change pip's cache directory to be inside the project directory since we can
         # only cache local items.
-        PIP_CACHE_DIR: "$CI_PROJECT_DIR/mb_work/cache_pip"
+        PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+    cache:
+        paths:
+            - .cache/pip
+
+
+.common_test_template: &common_test_template
+    <<: 
+        - *common_template
+
+    stage: 
+        test
+          
+    # Coverage is a regex that will parse the coverage from the test stdout
+    coverage: '/TOTAL.+ ([0-9]{1,3}%)/'
 
     except:
-        # Don't run the pipeline for new tags
-        - tags
+        refs:
+          - release 
+          - main 
+          - tags
+        #changes:
+        #    - README.rst
+        #    - CHANGELOG.md
 
 
 .build_template: &build_template
@@ -252,71 +134,171 @@ stages:
             - dist/*.whl
 
 
-.test_full_template: &test_full_template
-    # Tags define which runners will accept which jobs
+.common_test_template: &common_test_template
     <<: 
         - *common_template
 
     stage: 
         test
-    
-    before_script:
-        - python -V  # Print out python version for debugging
-        - export PYVER=$(python -c "import sys; print('{}{}'.format(*sys.version_info[0:2]))")
-        - pip install virtualenv
-        - virtualenv venv$PYVER
-        - source venv$PYVER/bin/activate
-        - pip install pip -U
-        - pip install pip setuptools -U
-        - python -V  # Print out python version for debugging
-        - pip install -r requirements.txt
-        - pip install kwimage[headless]  
-        # FIXME: we should start from a docker iamge that already has LibGL setup
-        - apt update && apt install libgl1-mesa-glx -y && rm -rf /var/lib/apt/lists/*  
-
-    script: 
-        - ./run_tests.py
-
-    cache:
-        paths:
-            - .cache/pip
-            - venv/
-
+          
     # Coverage is a regex that will parse the coverage from the test stdout
     coverage: '/TOTAL.+ ([0-9]{1,3}%)/'
 
+    except:
+        refs:
+          - release 
+          - main 
+          - tags
+        #changes:
+        #    - README.rst
+        #    - CHANGELOG.md
 
-.gpgsign_template: &gpgsign_template
+
+# Define anchors to be used in "before_script" parts
+._setup_virtualenv_template: &_setup_virtualenv_template |-
+    # Setup the correct version of python on this manylinux instance
+    python --version  # Print out python version for debugging
+    python -m pip install virtualenv
+    python -m virtualenv venv
+    source venv/bin/activate
+    pip install pip -U
+    pip install setuptools -U
+    pip install pygments
+
+._install_strict_minimal_requirements: &_install_strict_minimal_requirements |-
+    ./dev/make_strict_req.sh
+    pip install -r requirements-strict/runtime.txt -r requirements-strict/tests.txt
+
+._install_strict_full_requirements: &_install_strict_full_requirements |-
+    ./dev/make_strict_req.sh
+    pip install -r requirements-strict/optional.txt -r requirements-strict/runtime.txt -r requirements-strict/tests.txt
+
+    
+._install_loose_minimal_requirements: &_install_loose_minimal_requirements |-
+    pip install -r requirements/runtime.txt -r requirements/tests.txt
+
+
+._install_loose_full_requirements: &_install_loose_full_requirements |-
+    pip install -r requirements/optional.txt -r requirements/runtime.txt -r requirements/tests.txt
+
+
+._run_tests_in_sandboxed_dir: &_run_tests_in_sandboxed_dir |-
+    # Hack to test the installed wheel. TODO: make run_tests work better in this case.
+    mkdir -p sandbox && cd sandbox && pytest --xdoctest-verbose=3 -s --cov-config ../.coveragerc --cov-report html --cov-report term --cov=torch_liberator --xdoc $(python -c "import ubelt; print(ubelt.modname_to_modpath('torch_liberator'))") ../tests
+
+
+    
+._test_full_script: &_test_full_script
+    - ls wheelhouse || echo "wheelhouse does not exist"
+    - MB_PYTHON_TAG=$(echo ${CI_JOB_NAME} | sed 's/.*\/\(.*\)-manylinux2010/\1/')
+    - VERSION=$(python -c "import setup; print(setup.VERSION)")
+    - BDIST_WHEEL_PATH=wheelhouse/torch_liberator-${VERSION}-${MB_PYTHON_TAG}-*manylinux*_x86_64.whl
+    - pip install $BDIST_WHEEL_PATH
+    # - xdoctest torch_liberator --style=google all --mask 
+    - *_run_tests_in_sandboxed_dir
+
+
+._test_minimal_script: &_test_minimal_script
+    - ls wheelhouse || echo "wheelhouse does not exist"
+    - MB_PYTHON_TAG=py3-none-any
+    - VERSION=$(python -c "import setup; print(setup.VERSION)")
+    - BDIST_WHEEL_PATH=dist/torch_liberator-${VERSION}-${MB_PYTHON_TAG}.whl
+    - pip install $BDIST_WHEEL_PATH
+    #- xdoctest -m torch_liberator --style=google all
+    #- export DISABLE_C_EXTENSIONS=1
+    #- pip install -r requirements/tests.txt
+    - *_run_tests_in_sandboxed_dir
+    
+    
+.test_full_loose_template: &test_full_loose_template
+    <<: 
+        - *common_test_template
+
+    before_script:
+        - *_setup_virtualenv_template
+        - *_install_loose_full_requirements
+
+    script: *_test_full_script
+
+
+.test_minimal_loose_template: &test_minimal_loose_template
+    <<: 
+        - *common_test_template
+
+    before_script:
+        - *_setup_virtualenv_template
+        - *_install_loose_minimal_requirements
+
+    script: *_test_minimal_script
+
+.test_full_strict_template: &test_full_strict_template
+    <<: 
+        - *common_test_template
+
+    before_script:
+        - *_setup_virtualenv_template
+        - *_install_strict_full_requirements
+
+    script: *_test_full_script
+
+
+.test_minimal_strict_template: &test_minimal_strict_template
+    <<: 
+        - *common_test_template
+
+    before_script:
+        - *_setup_virtualenv_template
+        - *_install_strict_minimal_requirements
+
+    script: *_test_minimal_script
+
+
+gpgsign/wheels:
     <<: 
         - *common_template
+
+    image:
+        python:3.8
 
     stage: 
         gpgsign
 
     script: 
+        - ls wheelhouse
+        - ls dist
         - export GPG_EXECUTABLE=gpg
         - export GPG_KEYID=$(cat dev/public_gpg_key)
         - echo "GPG_KEYID = $GPG_KEYID"
+        - source dev/secrets_configuration.sh
+        # note the variable pointed to by VARNAME_CI_SECRET is a protected variables only available on main and release branch
+        - CI_SECRET=${!VARNAME_CI_SECRET}
         - $GPG_EXECUTABLE --version
         - openssl version
         - $GPG_EXECUTABLE --list-keys
-        - $GPG_EXECUTABLE --list-keys
-        # Decrypt and import GPG Keys / trust
         # note CI_KITWARE_SECRET is a protected variables only available on master and release branch
-        - GLKWS=$CI_KITWARE_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_public_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
-        - GLKWS=$CI_KITWARE_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/gpg_owner_trust.enc | $GPG_EXECUTABLE --import-ownertrust
-        - GLKWS=$CI_KITWARE_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_secret_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
-        - $GPG_EXECUTABLE --list-keys  || echo "first one fails for some reason"
-        - $GPG_EXECUTABLE --list-keys  
-        # The publish script only tags and uploads the built wheels if DO_TAG=True DO_UPLOAD=True
-        - pip install requests[security] twine
-        - MB_PYTHON_TAG=$MB_PYTHON_TAG DO_GPG=True GPG_KEYID=$GPG_KEYID TWINE_PASSWORD=$TWINE_PASSWORD TWINE_USERNAME=$TWINE_USERNAME GPG_EXECUTABLE=$GPG_EXECUTABLE DEPLOY_BRANCH=release DO_TAG=False DO_UPLOAD=False ./publish.sh
+        - GLKWS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_public_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
+        - GLKWS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/gpg_owner_trust.enc | $GPG_EXECUTABLE --import-ownertrust
+        - GLKWS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_secret_gpg_subkeys.pgp.enc | $GPG_EXECUTABLE --import 
+        - GPG_SIGN_CMD="$GPG_EXECUTABLE --batch --yes --detach-sign --armor --local-user $GPG_KEYID"
+
+        - |
+            WHEEL_PATHS=(wheelhouse/*.whl)
+            WHEEL_PATHS_STR=$(printf '"%s" ' "${WHEEL_PATHS[@]}")
+            echo "$WHEEL_PATHS_STR"
+            for WHEEL_PATH in "${WHEEL_PATHS[@]}"
+            do
+                echo "------"
+                echo "WHEEL_PATH = $WHEEL_PATH"
+                $GPG_SIGN_CMD --output $WHEEL_PATH.asc $WHEEL_PATH
+                $GPG_EXECUTABLE --verify $WHEEL_PATH.asc $WHEEL_PATH  || echo "hack, the first run of gpg very fails"
+                $GPG_EXECUTABLE --verify $WHEEL_PATH.asc $WHEEL_PATH 
+            done
+        - ls wheelhouse
+        - ls dist
 
     artifacts:
         paths:
-            - dist/*.asc
-            - dist/*.tar.gz
-            - dist/*.whl
+            - wheelhouse/*.asc
 
     only:
         refs:
@@ -324,36 +306,326 @@ stages:
             # (which I've set to be master and release), so only run this stage
             # there.
             - master
+            - main
             - release
 
 
-.deploy_template: &deploy_template
+deploy/wheels:
     <<: 
         - *common_template
+
+    image:
+        python:3.8
 
     stage: 
         deploy
 
     script: 
+        - pip install six pyopenssl ndg-httpsclient pyasn1 requests[security] twine -U 
+        - ls wheelhouse
+        - ls dist
+        - |
+            WHEEL_PATHS=(wheelhouse/*.whl)
+            WHEEL_PATHS_STR=$(printf '"%s" ' "${WHEEL_PATHS[@]}")
+            echo "$WHEEL_PATHS_STR"
+            for WHEEL_PATH in "${WHEEL_PATHS[@]}"
+            do
+                twine check $WHEEL_PATH.asc $WHEEL_PATH
+                twine upload --username $TWINE_USERNAME --password $TWINE_PASSWORD $WHEEL_PATH.asc $WHEEL_PATH
+            done
+            
+    only:
+        refs:
+            - release
+
+
+# Aliases for the images that run the tests
+.image_python39: &image_python39
+    gitlab.kitware.com:4567/computer-vision/ci-docker/gl-python:3.9
+.image_python38: &image_python38
+    gitlab.kitware.com:4567/computer-vision/ci-docker/gl-python:3.8
+.image_python37: &image_python37
+    gitlab.kitware.com:4567/computer-vision/ci-docker/gl-python:3.7
+.image_python36: &image_python36
+    gitlab.kitware.com:4567/computer-vision/ci-docker/gl-python:3.6
+
+
+### JOBS ###
+# Define the actual jobs
+
+# ---------------
+# Python 3.9 Jobs
+
+build/cp39-cp39-manylinux2010:
+    <<: 
+        - *cibuildwheel_template
+    variables:
+        CIBW_BUILD: "cp39-*"
+
+test_full_loose/cp39-cp39-manylinux2010:
+    <<: 
+        - *test_full_loose_template
+    image:
+        *image_python39
+    needs: 
+        -  build/cp39-cp39-manylinux2010
+
+test_minimal_loose/cp39-cp39-manylinux2010:
+    <<: 
+        - *test_minimal_loose_template
+    image:
+        *image_python39
+    needs: 
+        -  build/py3-none-any
+
+test_minimal_strict/cp39-cp39-manylinux2010:
+    <<: 
+        - *test_minimal_strict_template
+    image:
+        *image_python39
+    needs: 
+        -  build/py3-none-any
+
+test_full_strict/cp39-cp39-manylinux2010:
+    <<: 
+        - *test_full_strict_template
+    image:
+        *image_python39
+    needs: 
+        -  build/cp39-cp39-manylinux2010
+
+# ---------------
+# Python 3.8 Jobs
+
+build/cp38-cp38-manylinux2010:
+    <<: 
+        - *cibuildwheel_template
+    variables:
+        CIBW_BUILD: "cp38-*"
+
+test_full_loose/cp38-cp38-manylinux2010:
+    <<: 
+        - *test_full_loose_template
+    image:
+        *image_python38
+    needs: 
+        -  build/cp38-cp38-manylinux2010
+
+test_minimal_loose/cp38-cp38-manylinux2010:
+    <<: 
+        - *test_minimal_loose_template
+    image:
+        *image_python38
+    needs: 
+        -  build/py3-none-any
+
+test_minimal_strict/cp38-cp38-manylinux2010:
+    <<: 
+        - *test_minimal_strict_template
+    image:
+        *image_python38
+    needs: 
+        -  build/py3-none-any
+
+test_full_strict/cp38-cp38-manylinux2010:
+    <<: 
+        - *test_full_strict_template
+    image:
+        *image_python38
+    needs: 
+        -  build/cp38-cp38-manylinux2010
+
+# ---------------
+# Python 3.7 Jobs
+
+build/cp37-cp37m-manylinux2010:
+    <<: 
+        - *cibuildwheel_template
+    variables:
+        CIBW_BUILD: "cp37-*"
+
+test_full_loose/cp37-cp37m-manylinux2010:
+    <<: 
+        - *test_full_loose_template
+    image:
+        *image_python37
+    needs: 
+        -  build/cp37-cp37m-manylinux2010
+
+test_minimal_loose/cp37-cp37m-manylinux2010:
+    <<: 
+        - *test_minimal_loose_template
+    image:
+        *image_python37
+    needs: 
+        -  build/py3-none-any
+
+test_minimal_strict/cp37-cp37m-manylinux2010:
+    <<: 
+        - *test_minimal_strict_template
+    image:
+        *image_python37
+    needs: 
+        -  build/py3-none-any
+
+test_full_strict/cp37-cp37m-manylinux2010:
+    <<: 
+        - *test_full_strict_template
+    image:
+        *image_python37
+    needs: 
+        -  build/cp37-cp37m-manylinux2010
+
+
+# ---------------
+# Python 3.6 Jobs
+
+build/cp36-cp36m-manylinux2010:
+    <<: 
+        - *cibuildwheel_template
+    variables:
+        CIBW_BUILD: "cp36-*"
+
+test_full_loose/cp36-cp36m-manylinux2010:
+    <<: 
+        - *test_full_loose_template
+    image:
+        *image_python36
+    needs: 
+        -  build/cp36-cp36m-manylinux2010
+
+test_minimal_loose/cp36-cp36m-manylinux2010:
+    <<: 
+        - *test_minimal_loose_template
+    image:
+        *image_python36
+    needs: 
+        -  build/py3-none-any
+
+test_minimal_strict/cp36-cp36m-manylinux2010:
+    <<: 
+        - *test_minimal_strict_template
+    image:
+        *image_python36
+    needs: 
+        -  build/py3-none-any
+
+test_full_strict/cp36-cp36m-manylinux2010:
+    <<: 
+        - *test_full_strict_template
+    image:
+        *image_python36
+    needs: 
+        -  build/cp36-cp36m-manylinux2010
+
+
+# ---------------
+# Universal Python Jobs
+build/py3-none-any:
+    <<: 
+        - *common_template
+
+    stage: 
+        build
+
+    image: gitlab.kitware.com:4567/computer-vision/ci-docker/gl-python:3.7
+
+    before_script:
+        - python -V  # Print out python version for debugging
+        - pip install virtualenv
+        - virtualenv venv
+        - source venv/bin/activate
+        - pip install pip -U
+        - pip install pip setuptools -U
+
+    script: 
+        - export DISABLE_C_EXTENSIONS=1
+        - DISABLE_C_EXTENSIONS=1 python setup.py bdist_wheel
+        - DISABLE_C_EXTENSIONS=1 python setup.py sdist
+        - ls dist
+          
+    artifacts:
+        paths:
+            - dist/*.whl
+    cache:
+        paths:
+            - .cache/pip
+
+
+gpgsign/py3-none-any:
+    <<: 
+        - *common_template
+
+    stage: 
+        gpgsign
+
+    script: 
+        - ls dist
+        - MB_PYTHON_TAG=py3-none-any
+        - VERSION=$(python -c "import setup; print(setup.VERSION)")
+        - BDIST_WHEEL_PATH=dist/torch_liberator-${VERSION}-${MB_PYTHON_TAG}.whl
         - export GPG_EXECUTABLE=gpg
         - export GPG_KEYID=$(cat dev/public_gpg_key)
         - echo "GPG_KEYID = $GPG_KEYID"
+        - source dev/secrets_configuration.sh
+        # note the variable pointed to by VARNAME_CI_SECRET is a protected variables only available on main and release branch
+        - CI_SECRET=${!VARNAME_CI_SECRET}
         - $GPG_EXECUTABLE --version
         - openssl version
         - $GPG_EXECUTABLE --list-keys
-        - $GPG_EXECUTABLE --list-keys
-        # Decrypt and import GPG Keys / trust
         # note CI_KITWARE_SECRET is a protected variables only available on master and release branch
-        - GLKWS=$CI_KITWARE_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_public_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
-        - GLKWS=$CI_KITWARE_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/gpg_owner_trust.enc | $GPG_EXECUTABLE --import-ownertrust
-        - GLKWS=$CI_KITWARE_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_secret_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
-        - $GPG_EXECUTABLE --list-keys  || echo "first one fails for some reason"
-        - $GPG_EXECUTABLE --list-keys  
-        # Install twine
+        - GLKWS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_public_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
+        - GLKWS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/gpg_owner_trust.enc | $GPG_EXECUTABLE --import-ownertrust
+        - GLKWS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_secret_gpg_subkeys.pgp.enc | $GPG_EXECUTABLE --import 
+        - GPG_SIGN_CMD="$GPG_EXECUTABLE --batch --yes --detach-sign --armor --local-user $GPG_KEYID"
+        #- # $GPG_EXECUTABLE --list-keys
+        - echo "Signing wheels"
+        - $GPG_SIGN_CMD --output $BDIST_WHEEL_PATH.asc $BDIST_WHEEL_PATH
+        - ls dist
+        - echo "Verifying wheels"
+        - $GPG_EXECUTABLE --verify $BDIST_WHEEL_PATH.asc $BDIST_WHEEL_PATH  || echo "hack, the first run of gpg very fails"
+        - $GPG_EXECUTABLE --verify $BDIST_WHEEL_PATH.asc $BDIST_WHEEL_PATH 
+        - echo "Verified wheels"
+
+    artifacts:
+        paths:
+            - dist/*.asc
+
+    only:
+        refs:
+            # Gitlab will only expose protected variables on protected branches
+            # (which I've set to be master and release), so only run this stage
+            # there.
+            - master
+            - main
+            - release
+    image:
+        python:3.7
+
+deploy/py3-none-any:
+    <<: 
+        - *common_template
+
+    image:
+        python:3.7
+
+    stage: 
+        deploy
+
+    script: 
+        - ls dist
+        - MB_PYTHON_TAG=py3-none-any
+        - VERSION=$(python -c "import setup; print(setup.VERSION)")
+        - BDIST_WHEEL_PATH=dist/torch_liberator-${VERSION}-${MB_PYTHON_TAG}.whl
         - pip install six pyopenssl ndg-httpsclient pyasn1 -U 
         - pip install requests[security] twine 
-        # Execute the publish script for real this time
-        - MB_PYTHON_TAG=$MB_PYTHON_TAG DO_GPG=True GPG_KEYID=$GPG_KEYID TWINE_PASSWORD=$TWINE_PASSWORD TWINE_USERNAME=$TWINE_USERNAME GPG_EXECUTABLE=$GPG_EXECUTABLE CURRENT_BRANCH=release DEPLOY_BRANCH=release DO_TAG=True DO_UPLOAD=True ./publish.sh
+        - echo "Checking wheels"
+        - ls -al ${BDIST_WHEEL_PATH}*
+        - twine check $BDIST_WHEEL_PATH.asc $BDIST_WHEEL_PATH
+        - echo "Uploading wheels"
+        # todo, can we tag the branch here as well?
+        # note TWINE_USERNAME and TWINE_PASSWORD are protected variables only available on master and release branch
+        - twine upload --username $TWINE_USERNAME --password $TWINE_PASSWORD $BDIST_WHEEL_PATH.asc $BDIST_WHEEL_PATH
         # Have the server git-tag the release and push the tags
         - VERSION=$(python -c "import setup; print(setup.VERSION)")
         # do sed twice to handle the case of https clone with and without a read token
@@ -367,120 +639,3 @@ stages:
     only:
         refs:
             - release
-
-
-.build_install_test: &build_install_test
-    - pip install -r requirements.txt -U
-
-
-### JOBS ###
-# Define the actual jobs
-
-# ---------------
-# Python 3.9 Jobs
-
-build/cp39-cp39-linux:
-    <<: 
-        - *build_template
-    image:
-        python:3.9
-
-test_full/cp39-cp39-linux:
-    <<: 
-        - *test_full_template
-    image:
-        python:3.9
-
-
-# ---------------
-# Python 3.8 Jobs
-
-build/cp38-cp38-linux:
-    <<: 
-        - *build_template
-    image:
-        python:3.8
-
-test_full/cp38-cp38-linux:
-    <<: 
-        - *test_full_template
-    image:
-        python:3.8
-
-
-# for universal builds we only need to gpg sign once
-gpgsign/cp38-cp38-linux:
-    <<: 
-        - *gpgsign_template
-    image:
-        python:3.8
-
-deploy/cp38-cp38-linux:
-    <<: 
-        - *deploy_template
-    image:
-        python:3.8
-      
-
-# ---------------
-# Python 3.7 Jobs
-
-build/cp37-cp37m-linux:
-    <<: 
-        - *build_template
-    image:
-        python:3.7
-
-test_full/cp37-cp37m-linux:
-    <<: 
-        - *test_full_template
-    image:
-        python:3.7
-
-
-# ---------------
-# Python 3.6 Jobs
-
-build/cp36-cp36m-linux:
-    <<: 
-        - *build_template
-    image:
-        python:3.6
-
-test_full/cp36-cp36m-linux:
-    <<: 
-        - *test_full_template
-    image:
-        python:3.6
-
-
-# ---------------
-# Python 3.5 Jobs
-
-#build/cp35-cp35m-linux:
-#    <<: 
-#        - *build_template
-#    image:
-#        python:3.5
-
-#test_full/cp35-cp35m-linux:
-#    <<: 
-#        - *test_full_template
-#    image:
-#        python:3.5
-
-
-# ---------------
-# Python 2.7 Jobs
-
-#build/cp27-cp27mu-linux:
-#    <<: 
-#        - *build_template
-#    image:
-#        python:2.7
-
-#test_full/cp27-cp27mu-linux:
-#    <<: 
-#        - *test_full_template
-#    image:
-#        python:2.7
