@@ -2,7 +2,7 @@
 mkinit ~/code/torch_liberator/torch_liberator/__init__.py -w
 """
 
-__version__ = '0.1.1'
+__version__ = '0.1.2'
 
 from torch_liberator import deployer
 from torch_liberator import exporter
