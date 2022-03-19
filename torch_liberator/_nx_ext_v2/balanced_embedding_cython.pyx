@@ -15,10 +15,12 @@ CommandLine
 -----------
 # Explicitly build this cython module 
 # NOTE: cd to networkx repo root before running
-cythonize -a -i initializers/_nx_ext_v2/balanced_embedding_cython.pyx
+BASE_DPATH=$(python -c "import torch_liberator, pathlib; print(pathlib.Path(torch_liberator.__file__).parent)")
+cythonize -a -i $BASE_DPATH/_nx_ext_v2/balanced_embedding_cython.pyx
 
 # With xdoctest this should work if networkx is installed (and this file is
 # distributed with it)
+# NOTE: xdoctest is not parsing this for some reason. Not sure why
 xdoctest -m torch_liberator._nx_ext_v2.balanced_sequence _cython_lcse_backend
 
 # Which will then let you run these examples and benchmarks
@@ -77,8 +79,19 @@ Benchmark
 >>> for timer in ti.reset('impl=iter'):
 >>>     with timer:
 >>>         bemb.longest_common_balanced_embedding(seq1, seq2, open_to_close, impl='iter')
+
+
+Ignore
+------
+
+# If xdoctest does not list this, is is likely because the __doc__ is stripped
+# ScikitBuild seems to do this? Not sure how to turn it off.
+python -c "from torch_liberator._nx_ext_v2 import balanced_embedding_cython; print(balanced_embedding_cython.__doc__)"
+
 """
 cimport cython
+
+
 
 
 # Template sequence types over strings and tuples

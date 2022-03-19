@@ -133,6 +133,7 @@ def visualization():
         paths = [p for p in paths if not p.endswith('running_var')]
         paths = [p for p in paths if not p.endswith('running_mean')]
         paths = [p for p in paths if not p.endswith('bias')]
+        paths = [p[:-len('.weight')] if p.endswith('.weight') else p for p in paths]
         # paths = [p.replace('.weight', '') for p in paths]
         paths = [p for p in paths if 'layer2' not in p]
         paths = [p for p in paths if 'layer3' not in p]
@@ -160,6 +161,7 @@ def visualization():
     nx.set_node_attributes(det_tree, name='color', values=kwimage.Color('lightgreen').as01())
 
     layoutkw = {'rankdir': 'LR'}
+    kwplot.figure(fnum=1, doclf=True)
     _ = graphid.util.util_graphviz.show_nx(
         clf_tree,
         fnum=1,
@@ -168,6 +170,7 @@ def visualization():
         layoutkw=layoutkw,
     )
 
+    kwplot.figure(fnum=2, doclf=True)
     _ = graphid.util.util_graphviz.show_nx(
         det_tree,
         fnum=2,
@@ -176,6 +179,7 @@ def visualization():
         layoutkw=layoutkw,
     )
 
+    kwplot.figure(fnum=4, doclf=True)
     _ = graphid.util.util_graphviz.show_nx(
         wrp_tree,
         fnum=4,
@@ -200,8 +204,8 @@ def visualization():
     layoutkw_['prog'] = 'neato'
     _ = graphid.util.util_graphviz.nx_agraph_layout(stacked, inplace=True, **layoutkw_)  # NOQA
 
-    # layout_info = graphid.util.util_graphviz.get_nx_layout(stacked, 'custom')
-    kwplot.figure(fnum=3).gca().cla()
+    layout_info = graphid.util.util_graphviz.get_nx_layout(stacked, 'custom')
+    kwplot.figure(fnum=5).gca().cla()
     _ = graphid.util.util_graphviz.show_nx(
         stacked,
         as_directed=False,
