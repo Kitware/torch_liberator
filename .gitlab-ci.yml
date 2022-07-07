@@ -182,8 +182,10 @@ stages:
       - ls wheelhouse || echo "wheelhouse does not exist"
       - pip install toml
       - MOD_NAME=$(python -c "import toml; print(toml.load(open('pyproject.toml'))['tool']['xcookie']['mod_name'])")
-      - pip install opencv-python-headless
       - pip install "${MOD_NAME}"[all] -f wheelhouse
+      - pip install opencv-python-headless
+      - pip install netharn
+      - pip install pytest
       - *_run_tests_in_sandboxed_dir
 
 
@@ -198,8 +200,10 @@ stages:
       - ls wheelhouse || echo "wheelhouse does not exist"
       - pip install toml
       - MOD_NAME=$(python -c "import toml; print(toml.load(open('pyproject.toml'))['tool']['xcookie']['mod_name'])")
-      - pip install opencv-python-headless
       - pip install "${MOD_NAME}"[tests] -f wheelhouse
+      - pip install opencv-python-headless
+      - pip install netharn
+      - pip install pytest
       - *_run_tests_in_sandboxed_dir
 
 .test_full_strict_template: &test_full_strict_template
@@ -211,10 +215,12 @@ stages:
 
     script: 
       - ls wheelhouse || echo "wheelhouse does not exist"
-      - pip install toml
-      - MOD_NAME=$(python -c "import toml; print(toml.load(open('pyproject.toml'))['tool']['xcookie']['mod_name'])")
-      - pip install opencv-python-headless
+      - pip install tomli
+      - MOD_NAME=$(python -c "import tomli; print(tomli.load(open('pyproject.toml'))['tool']['xcookie']['mod_name'])")
       - pip install "${MOD_NAME}"[all-strict] -f wheelhouse
+      - pip install opencv-python-headless
+      - pip install netharn==0.6.0
+      - pip install pytest
       - *_run_tests_in_sandboxed_dir
 
 
@@ -227,10 +233,12 @@ stages:
 
     script:
       - ls wheelhouse || echo "wheelhouse does not exist"
-      - pip install toml
-      - MOD_NAME=$(python -c "import toml; print(toml.load(open('pyproject.toml'))['tool']['xcookie']['mod_name'])")
-      - pip install opencv-python-headless
+      - pip install tomli
+      - MOD_NAME=$(python -c "import tomli; print(tomli.load(open('pyproject.toml'))['tool']['xcookie']['mod_name'])")
       - pip install "${MOD_NAME}"[runtime-strict,tests-strict] -f wheelhouse
+      - pip install opencv-python-headless
+      - pip install netharn==0.6.0
+      - pip install pytest
       - *_run_tests_in_sandboxed_dir
 
 
