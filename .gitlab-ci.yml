@@ -182,6 +182,7 @@ stages:
       - ls wheelhouse || echo "wheelhouse does not exist"
       - pip install toml
       - MOD_NAME=$(python -c "import toml; print(toml.load(open('pyproject.toml'))['tool']['xcookie']['mod_name'])")
+      - pip install opencv-python-headless
       - pip install "${MOD_NAME}"[all,headless] -f wheelhouse
       - *_run_tests_in_sandboxed_dir
 
@@ -197,6 +198,7 @@ stages:
       - ls wheelhouse || echo "wheelhouse does not exist"
       - pip install toml
       - MOD_NAME=$(python -c "import toml; print(toml.load(open('pyproject.toml'))['tool']['xcookie']['mod_name'])")
+      - pip install opencv-python-headless
       - pip install "${MOD_NAME}"[tests,headless] -f wheelhouse
       - *_run_tests_in_sandboxed_dir
 
@@ -211,6 +213,7 @@ stages:
       - ls wheelhouse || echo "wheelhouse does not exist"
       - pip install toml
       - MOD_NAME=$(python -c "import toml; print(toml.load(open('pyproject.toml'))['tool']['xcookie']['mod_name'])")
+      - pip install opencv-python-headless
       - pip install "${MOD_NAME}"[all-strict,headless-strict] -f wheelhouse
       - *_run_tests_in_sandboxed_dir
 
@@ -226,6 +229,7 @@ stages:
       - ls wheelhouse || echo "wheelhouse does not exist"
       - pip install toml
       - MOD_NAME=$(python -c "import toml; print(toml.load(open('pyproject.toml'))['tool']['xcookie']['mod_name'])")
+      - pip install opencv-python-headless
       - pip install "${MOD_NAME}"[runtime-strict,tests-strict,headless-strict] -f wheelhouse
       - *_run_tests_in_sandboxed_dir
 
