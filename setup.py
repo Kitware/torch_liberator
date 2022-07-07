@@ -237,9 +237,7 @@ VERSION = parse_version('torch_liberator/__init__.py')
 
 if __name__ == '__main__':
     if 'clean' in sys.argv:
-        # hack
         clean()
-        # sys.exit(0)
 
     setupkw = {}
     setupkw["install_requires"] = parse_requirements("requirements/runtime.txt")
