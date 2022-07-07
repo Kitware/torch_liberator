@@ -183,7 +183,7 @@ stages:
       - pip install toml
       - MOD_NAME=$(python -c "import toml; print(toml.load(open('pyproject.toml'))['tool']['xcookie']['mod_name'])")
       - pip install opencv-python-headless
-      - pip install "${MOD_NAME}"[all,headless] -f wheelhouse
+      - pip install "${MOD_NAME}"[all] -f wheelhouse
       - *_run_tests_in_sandboxed_dir
 
 
@@ -199,7 +199,7 @@ stages:
       - pip install toml
       - MOD_NAME=$(python -c "import toml; print(toml.load(open('pyproject.toml'))['tool']['xcookie']['mod_name'])")
       - pip install opencv-python-headless
-      - pip install "${MOD_NAME}"[tests,headless] -f wheelhouse
+      - pip install "${MOD_NAME}"[tests] -f wheelhouse
       - *_run_tests_in_sandboxed_dir
 
 .test_full_strict_template: &test_full_strict_template
@@ -214,7 +214,7 @@ stages:
       - pip install toml
       - MOD_NAME=$(python -c "import toml; print(toml.load(open('pyproject.toml'))['tool']['xcookie']['mod_name'])")
       - pip install opencv-python-headless
-      - pip install "${MOD_NAME}"[all-strict,headless-strict] -f wheelhouse
+      - pip install "${MOD_NAME}"[all-strict] -f wheelhouse
       - *_run_tests_in_sandboxed_dir
 
 
