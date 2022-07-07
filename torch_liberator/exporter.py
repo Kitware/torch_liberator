@@ -70,6 +70,7 @@ def export_model_code(dpath, model, initkw=None, export_modules=[]):
             to use `ub.import_module_from_path` to "load" the model instead.
 
     Example:
+        >>> # xdoctest: +REQUIRES(module:torchvision)
         >>> from torch_liberator.exporter import export_model_code
         >>> from torchvision.models import densenet
         >>> import torchvision
@@ -155,7 +156,12 @@ def export_model_code(dpath, model, initkw=None, export_modules=[]):
 
         # TODO: assert that the name "make" is not used in the model body
 
-    lib = liberator.Liberator()
+    try:
+        lib = liberator.Liberator()
+    except AttributeError:
+        from liberator.closer import Closer
+        lib = Closer()
+
     obj = model_class
     expand_names = export_modules
     import sys
