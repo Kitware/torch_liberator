@@ -230,7 +230,7 @@ stages:
       - pip install toml
       - MOD_NAME=$(python -c "import toml; print(toml.load(open('pyproject.toml'))['tool']['xcookie']['mod_name'])")
       - pip install opencv-python-headless
-      - pip install "${MOD_NAME}"[runtime-strict,tests-strict,headless-strict] -f wheelhouse
+      - pip install "${MOD_NAME}"[runtime-strict,tests-strict] -f wheelhouse
       - *_run_tests_in_sandboxed_dir
 
 
