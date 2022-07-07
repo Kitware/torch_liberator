@@ -18,9 +18,9 @@ mod_name = "torch_liberator"
 repo_name = "torch_liberator"
 rel_mod_parent_dpath = "."
 os = [ "linux",]
-min_python = 3.7
+min_python = 3.6
 license = "Apache 2"
-dev_status = "planning"
+dev_status = "alpha"
 
 [tool.pytest.ini_options]
 addopts = "-p no:doctest --xdoctest --xdoctest-style=google --ignore-glob=setup.py"
