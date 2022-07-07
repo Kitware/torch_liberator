@@ -167,6 +167,7 @@ stages:
 ._run_tests_in_sandboxed_dir: &_run_tests_in_sandboxed_dir |-
     # Hack to test the installed wheel. TODO: make run_tests work better in this case.
     MOD_NAME=$(python -c "import tomli; print(tomli.load(open('pyproject.toml', 'rb'))['tool']['xcookie']['mod_name'])")
+    echo "MOD_NAME='$MOD_NAME'"
     mkdir -p sandbox && cd sandbox && pytest --xdoctest-verbose=3 -s --cov-config ../pyproject.toml --cov-report html --cov-report term --cov="$MOD_NAME" --xdoc $(python -c "import ubelt; print(ubelt.modname_to_modpath('${MOD_NAME}'))") ../tests
 
     
@@ -182,6 +183,7 @@ stages:
       - ls wheelhouse || echo "wheelhouse does not exist"
       - pip install tomli
       - MOD_NAME=$(python -c "import tomli; print(tomli.load(open('pyproject.toml', 'rb'))['tool']['xcookie']['mod_name'])")
+      - echo "MOD_NAME='$MOD_NAME'"
       - pip install "${MOD_NAME}"[all] -f wheelhouse
       - pip install opencv-python-headless
       - pip install netharn
@@ -200,6 +202,7 @@ stages:
       - ls wheelhouse || echo "wheelhouse does not exist"
       - pip install tomli
       - MOD_NAME=$(python -c "import tomli; print(tomli.load(open('pyproject.toml', 'rb'))['tool']['xcookie']['mod_name'])")
+      - echo "MOD_NAME='$MOD_NAME'"
       - pip install "${MOD_NAME}"[tests] -f wheelhouse
       - pip install opencv-python-headless
       - pip install netharn
@@ -217,6 +220,7 @@ stages:
       - ls wheelhouse || echo "wheelhouse does not exist"
       - pip install tomli
       - MOD_NAME=$(python -c "import tomli; print(tomli.load(open('pyproject.toml', 'rb'))['tool']['xcookie']['mod_name'])")
+      - echo "MOD_NAME='$MOD_NAME'"
       - pip install "${MOD_NAME}"[all-strict] -f wheelhouse
       - pip install opencv-python-headless
       - pip install netharn==0.6.0
@@ -235,6 +239,7 @@ stages:
       - ls wheelhouse || echo "wheelhouse does not exist"
       - pip install tomli
       - MOD_NAME=$(python -c "import tomli; print(tomli.load(open('pyproject.toml', 'rb'))['tool']['xcookie']['mod_name'])")
+      - echo "MOD_NAME='$MOD_NAME'"
       - pip install "${MOD_NAME}"[runtime-strict,tests-strict] -f wheelhouse
       - pip install opencv-python-headless
       - pip install netharn==0.6.0
