@@ -657,7 +657,7 @@ deploy/wheels:
           #python3 -m pip install .
           #python3 -m pip uninstall cibuildwheel
           #cibuildwheel --platform linux --print-build-identifiers
-          python3 -m pip install git+https://github.com/Erotemic/cibuildwheel.git@new_podman_support
+          python3 -m pip install cibuildwheel.git
 
           # Install the repo
           cd $HOME
