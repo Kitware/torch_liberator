@@ -658,6 +658,7 @@ class DeployedModel(ub.NiceRepr):
 
         Example:
             >>> # Setup raw components
+            >>> # xdoctest: +REQUIRES(module:netharn)
             >>> train_dpath = _demodata_trained_dpath()
             >>> deployed = DeployedModel(train_dpath)
             >>> snap_fpath = deployed.info['snap_fpath']
@@ -711,7 +712,7 @@ def _demodata_toy_harn():
     harn = nh.FitHarn(hyper)
     harn.preferences['use_tensorboard'] = False
     harn.preferences['log_gradients'] = False
-    harn.preferences['timeout'] = 1
+    # harn.preferences['timeout'] = 30
     return harn
 
 
