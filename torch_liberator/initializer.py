@@ -926,9 +926,8 @@ def maximum_common_ordered_subpaths(paths1, paths2, sep='.', mode='embedding'):
         show_nx(tree1, with_labels=False, layoutkw={'prog': 'neato'})
 
     Example:
-        >>> rng = None
-        >>> import kwarray
-        >>> rng = kwarray.ensure_rng(rng)
+        >>> import numpy as np
+        >>> rng = np.random
         >>> def random_paths(rng, max_depth=10):
         >>>     depth = rng.randint(1, max_depth)
         >>>     parts = list(map(chr, rng.randint(ord('a'), ord('z'), size=depth)))

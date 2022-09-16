@@ -352,6 +352,7 @@ class DeployedModel(ub.NiceRepr):
         xdoctest -m torch_liberator.deployer DeployedModel
 
     Example:
+        >>> # xdoctest: +REQUIRES(module:netharn)
         >>> # Test the train folder as the model deployment
         >>> train_dpath = _demodata_trained_dpath()
         >>> self = DeployedModel(train_dpath)
@@ -360,6 +361,7 @@ class DeployedModel(ub.NiceRepr):
         >>> print('model.__module__ = {!r}'.format(model.__module__))
 
     Example:
+        >>> # xdoctest: +REQUIRES(module:netharn)
         >>> # Test the zip file as the model deployment
         >>> zip_fpath = _demodata_zip_fpath()
         >>> self = DeployedModel(zip_fpath)
@@ -538,8 +540,8 @@ class DeployedModel(ub.NiceRepr):
         """
         # FIXME: netharn dependency
         import torch
-        import netharn as nh
-        xpu = nh.XPU.coerce(xpu)
+        from torch_liberator import xpu_device
+        xpu = xpu_device.XPU.coerce(xpu)
 
         if isinstance(deployed, str):
             deployed = DeployedModel(deployed)
@@ -548,7 +550,7 @@ class DeployedModel(ub.NiceRepr):
             # User passed in the model directly
             model = deployed
             try:
-                model_xpu = nh.XPU.coerce(model)
+                model_xpu = xpu_device.XPU.coerce(model)
                 if xpu != model_xpu:
                     log('Re-Mount model on {}'.format(xpu))
                     model = xpu.mount(model)
@@ -575,7 +577,7 @@ class DeployedModel(ub.NiceRepr):
                 (1) a DeployedModel object
                 (2) a path to a deploy file
                 (3) a live pytorch module
-                (4) a path to a .pt file in a netharn train snapshot directory.
+                (4) a path to a .pt file in a train snapshot directory.
 
         Returns:
             DeployedModel
@@ -689,6 +691,7 @@ def _demodata_zip_fpath():
 
 
 def _demodata_toy_harn():
+    # TODO: replace with lightning
     # This will train a toy model with toy data using netharn
     import netharn as nh
     hyper = nh.HyperParams(**{

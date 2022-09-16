@@ -1,7 +1,7 @@
 from torch_liberator.initializer import Pretrained
-import torchvision
-import torch
 import ubelt as ub
+import torch
+import torchvision
 
 
 class CustomModel(torch.nn.Module):
