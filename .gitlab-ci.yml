@@ -327,43 +327,43 @@ deploy/wheels:
 # Python 3.11 Jobs
 
 
-build/cp3_11-cp3_11-linux:
-    <<: 
-        - *build_template
-    image:
-        *image_python3_11
+#build/cp3_11-cp3_11-linux:
+#    <<: 
+#        - *build_template
+#    image:
+#        *image_python3_11
 
-test_full_loose/cp3_11-cp3_11-linux:
-    <<: 
-        - *test_full_loose_template
-    image:
-        *image_python3_11
-    needs: 
-        -  build/cp3_11-cp3_11-linux
+#test_full_loose/cp3_11-cp3_11-linux:
+#    <<: 
+#        - *test_full_loose_template
+#    image:
+#        *image_python3_11
+#    needs: 
+#        -  build/cp3_11-cp3_11-linux
 
-test_minimal_loose/cp3_11-cp3_11-linux:
-    <<: 
-        - *test_minimal_loose_template
-    image:
-        *image_python3_11
-    needs: 
-        -  build/cp3_11-cp3_11-linux
+#test_minimal_loose/cp3_11-cp3_11-linux:
+#    <<: 
+#        - *test_minimal_loose_template
+#    image:
+#        *image_python3_11
+#    needs: 
+#        -  build/cp3_11-cp3_11-linux
 
-test_full_strict/cp3_11-cp3_11-linux:
-    <<: 
-        - *test_full_strict_template
-    image:
-        *image_python3_11
-    needs: 
-        -  build/cp3_11-cp3_11-linux
+#test_full_strict/cp3_11-cp3_11-linux:
+#    <<: 
+#        - *test_full_strict_template
+#    image:
+#        *image_python3_11
+#    needs: 
+#        -  build/cp3_11-cp3_11-linux
 
-test_minimal_strict/cp3_11-cp3_11-linux:
-    <<: 
-        - *test_minimal_strict_template
-    image:
-        *image_python3_11
-    needs: 
-        -  build/cp3_11-cp3_11-linux
+#test_minimal_strict/cp3_11-cp3_11-linux:
+#    <<: 
+#        - *test_minimal_strict_template
+#    image:
+#        *image_python3_11
+#    needs: 
+#        -  build/cp3_11-cp3_11-linux
 
 
 # ---------------
