@@ -302,6 +302,9 @@ deploy/wheels:
 
 
 # Aliases for the images that run the tests
+.image_python3_11: &image_python3_11
+    #gitlab.kitware.com:4567/computer-vision/ci-docker/gl-python:3.10
+    python:3.11
 .image_python3_10: &image_python3_10
     #gitlab.kitware.com:4567/computer-vision/ci-docker/gl-python:3.10
     python:3.10
@@ -319,6 +322,48 @@ deploy/wheels:
 
 ### JOBS ###
 # Define the actual jobs
+#
+# ---------------
+# Python 3.11 Jobs
+
+
+build/cp3_11-cp3_11-linux:
+    <<: 
+        - *build_template
+    image:
+        *image_python3_11
+
+test_full_loose/cp3_11-cp3_11-linux:
+    <<: 
+        - *test_full_loose_template
+    image:
+        *image_python3_11
+    needs: 
+        -  build/cp3_11-cp3_11-linux
+
+test_minimal_loose/cp3_11-cp3_11-linux:
+    <<: 
+        - *test_minimal_loose_template
+    image:
+        *image_python3_11
+    needs: 
+        -  build/cp3_11-cp3_11-linux
+
+test_full_strict/cp3_11-cp3_11-linux:
+    <<: 
+        - *test_full_strict_template
+    image:
+        *image_python3_11
+    needs: 
+        -  build/cp3_11-cp3_11-linux
+
+test_minimal_strict/cp3_11-cp3_11-linux:
+    <<: 
+        - *test_minimal_strict_template
+    image:
+        *image_python3_11
+    needs: 
+        -  build/cp3_11-cp3_11-linux
 
 
 # ---------------
