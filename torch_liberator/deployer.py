@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Deployment component of the Pytorch exporter.
 
@@ -39,19 +38,14 @@ Example:
     >>> loader = DeployedModel(zip_fpath)
     >>> model = loader.load_model()
 """
-from __future__ import absolute_import, division, print_function, unicode_literals
 import glob
 import json
-import six
 import ubelt as ub
 import zipfile
 import os
 from os.path import basename, exists, isdir, join, relpath
 
 __all__ = ['DeployedModel', 'deploy']
-
-if six.PY2:
-    FileNotFoundError = OSError
 
 
 def deploy(model, fpath, initkw=None, export_modules=[]):
@@ -358,6 +352,7 @@ class DeployedModel(ub.NiceRepr):
         xdoctest -m torch_liberator.deployer DeployedModel
 
     Example:
+        >>> # xdoctest: +REQUIRES(module:netharn)
         >>> # Test the train folder as the model deployment
         >>> train_dpath = _demodata_trained_dpath()
         >>> self = DeployedModel(train_dpath)
@@ -366,6 +361,7 @@ class DeployedModel(ub.NiceRepr):
         >>> print('model.__module__ = {!r}'.format(model.__module__))
 
     Example:
+        >>> # xdoctest: +REQUIRES(module:netharn)
         >>> # Test the zip file as the model deployment
         >>> zip_fpath = _demodata_zip_fpath()
         >>> self = DeployedModel(zip_fpath)
@@ -544,17 +540,17 @@ class DeployedModel(ub.NiceRepr):
         """
         # FIXME: netharn dependency
         import torch
-        import netharn as nh
-        xpu = nh.XPU.coerce(xpu)
+        from torch_liberator import xpu_device
+        xpu = xpu_device.XPU.coerce(xpu)
 
-        if isinstance(deployed, six.string_types):
+        if isinstance(deployed, str):
             deployed = DeployedModel(deployed)
 
         if isinstance(deployed, torch.nn.Module):
             # User passed in the model directly
             model = deployed
             try:
-                model_xpu = nh.XPU.coerce(model)
+                model_xpu = xpu_device.XPU.coerce(model)
                 if xpu != model_xpu:
                     log('Re-Mount model on {}'.format(xpu))
                     model = xpu.mount(model)
@@ -581,7 +577,7 @@ class DeployedModel(ub.NiceRepr):
                 (1) a DeployedModel object
                 (2) a path to a deploy file
                 (3) a live pytorch module
-                (4) a path to a .pt file in a netharn train snapshot directory.
+                (4) a path to a .pt file in a train snapshot directory.
 
         Returns:
             DeployedModel
@@ -595,7 +591,7 @@ class DeployedModel(ub.NiceRepr):
             # The argument is a live pytorch model
             deployed = DeployedModel(None)
             deployed._model = arg
-        elif isinstance(arg, six.string_types):
+        elif isinstance(arg, str):
             # handle the case where we are given a weights file
             # use heuristics try and determine model topology
             if arg.endswith('.pt'):
@@ -658,6 +654,7 @@ class DeployedModel(ub.NiceRepr):
 
         Example:
             >>> # Setup raw components
+            >>> # xdoctest: +REQUIRES(module:netharn)
             >>> train_dpath = _demodata_trained_dpath()
             >>> deployed = DeployedModel(train_dpath)
             >>> snap_fpath = deployed.info['snap_fpath']
@@ -668,7 +665,7 @@ class DeployedModel(ub.NiceRepr):
             >>> dpath = ub.ensure_app_cache_dir('torch_liberator', 'tests/_package_custom')
             >>> self.package(dpath)
         """
-        if isinstance(model, six.string_types):
+        if isinstance(model, str):
             model_fpath = model
             if initkw is not None:
                 raise ValueError('initkw not used when model is a path')
@@ -694,6 +691,7 @@ def _demodata_zip_fpath():
 
 
 def _demodata_toy_harn():
+    # TODO: replace with lightning
     # This will train a toy model with toy data using netharn
     import netharn as nh
     hyper = nh.HyperParams(**{
@@ -711,7 +709,7 @@ def _demodata_toy_harn():
     harn = nh.FitHarn(hyper)
     harn.preferences['use_tensorboard'] = False
     harn.preferences['log_gradients'] = False
-    harn.preferences['timeout'] = 1
+    # harn.preferences['timeout'] = 30
     return harn
 
 

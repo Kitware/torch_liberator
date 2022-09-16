@@ -1,2 +1,2 @@
 #!/bin/bash
-xdoctest torch_liberator --style=google all
+xdoctest torch_liberator --style=google all "$@"

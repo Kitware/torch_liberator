@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Export component of the Pytorch exporter.
 
@@ -22,13 +21,9 @@ TODO:
 
 CommandLine:
     xdoctest -m torch_liberator.exporter export_model_code
-    xdoctest -m torch_liberator.exporter source_closure:1
-
     xdoctest -m torch_liberator.exporter all
 """
-from __future__ import absolute_import, division, print_function, unicode_literals
 import ast
-import six  # NOQA
 import re
 import hashlib
 import io
@@ -37,7 +32,7 @@ import tokenize
 import ubelt as ub
 import warnings
 from os.path import join
-from liberator import closer
+import liberator
 
 __all__ = ['export_model_code']
 
@@ -72,6 +67,7 @@ def export_model_code(dpath, model, initkw=None, export_modules=[]):
             to use `ub.import_module_from_path` to "load" the model instead.
 
     Example:
+        >>> # xdoctest: +REQUIRES(module:torchvision)
         >>> from torch_liberator.exporter import export_model_code
         >>> from torchvision.models import densenet
         >>> import torchvision
@@ -85,10 +81,7 @@ def export_model_code(dpath, model, initkw=None, export_modules=[]):
         >>> mod_fname = (basename(static_modpath))
         >>> print('mod_fname = {!r}'.format(mod_fname))
         >>> if torchvision.__version__ == '0.2.2':
-        >>>     if six.PY2:
-        >>>         assert mod_fname == 'DenseNet_b7ec43.py', 'got={}'.format(mod_fname)
-        >>>     else:
-        >>>         assert mod_fname == 'DenseNet_256629.py', 'got={}'.format(mod_fname)
+        >>>     assert mod_fname == 'DenseNet_256629.py', 'got={}'.format(mod_fname)
         >>> # now the module can be loaded
         >>> module = ub.import_module_from_path(static_modpath)
         >>> loaded = module.make()
@@ -157,7 +150,36 @@ def export_model_code(dpath, model, initkw=None, export_modules=[]):
 
         # TODO: assert that the name "make" is not used in the model body
 
-    body = closer.source_closure(model_class, expand_names=export_modules)
+    try:
+        lib = liberator.Liberator()
+    except AttributeError:
+        from liberator.closer import Closer
+        lib = Closer()
+
+    obj = model_class
+    expand_names = export_modules
+    import sys
+    # First try to add statically (which tends to be slightly nicer)
+    try:
+        try:
+            name = obj.__name__
+            modpath = sys.modules[obj.__module__].__file__
+        except Exception:
+            # Otherwise add dynamically
+            lib.add_dynamic(obj)
+        else:
+            lib.add_static(name, modpath)
+        if expand_names:
+            lib.expand(expand_names)
+        closed_sourcecode = lib.current_sourcecode()
+    except Exception:
+        print('ERROR IN CLOSING')
+        print('[[[ START CLOSE LOGS ]]]')
+        print('lib.logs =\n{}'.format('\n'.join(lib.logger.logs)))
+        print('[[[ END CLOSE LOGS ]]]')
+        raise
+
+    body = closed_sourcecode
 
     body_footer = body + footer + '\n'
     # dont need to hash the header, because comments are removed anyway

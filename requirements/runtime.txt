@@ -1,7 +1,21 @@
 # python ~/local/tools/supported_python_versions_pip.py torch
-ubelt>=0.8.2
+# python ~/local/tools/supported_python_versions_pip.py networkx
+ubelt>=1.2.2
 liberator>=0.0.1
-six >= 1.11.0
 
-torch>=1.8.0     ;                              python_version >= '3.8.0'  # Python 3.8+
-torch>=1.4.0     ; python_version < '3.8.0' and python_version >= '3.6'    # Python 3.6-3.8
+torch>=1.11.0    ;                            python_version >= '3.10'    # Python 3.10+
+torch>=1.11.0    ; python_version < '3.10' and python_version >= '3.9'    # Python 3.9
+torch>=1.7.0     ; python_version < '3.9' and python_version >= '3.8'    # Python 3.8
+torch>=1.7.0     ; python_version < '3.8' and python_version >= '3.7'    # Python 3.7
+torch>=1.7.0     ; python_version < '3.7' and python_version >= '3.6'    # Python 3.6
+
+numpy>=1.21.6    ;                            python_version >= '3.10'    # Python 3.10+
+numpy>=1.19.3    ; python_version < '3.10' and python_version >= '3.9'    # Python 3.9
+numpy>=1.19.2    ; python_version < '3.9' and python_version >= '3.8'    # Python 3.8
+numpy>=1.19.2    ; python_version < '3.8' and python_version >= '3.7'    # Python 3.7
+numpy>=1.19.2    ; python_version < '3.7' and python_version >= '3.6'    # Python 3.6
+
+networkx>=2.6.2     ;                            python_version >= '3.7'    # Python 3.7+
+networkx>=2.5.1     ; python_version < '3.7' and python_version >= '3.6'    # Python 3.6
+
+networkx_algo_common_subtree >= 0.2.0

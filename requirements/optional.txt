@@ -1,2 +1,0 @@
-numpy >= 1.19.3  ;                              python_version >= '3.6.0'  # Python 3.6+
-numpy >= 1.16.6  ; python_version < '3.6.0' and python_version >= '2.7.0'  # Python 2.7 - 3.6

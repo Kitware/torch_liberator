@@ -1,25 +1,25 @@
-# Note: expand yaml
-# yaml merge-expand .gitlab-ci.yml _expandyml && cat _expandyml
-# 
-# GITLAB LINTER
-# https://gitlab.kitware.com/utils/torch_liberator/-/ci/lint
-
-
-# This CI file has 4 types of jobs:
-# (1) in the build stage we we build the wheels on a manylinux docker image
-# (2) then in the test stage we install the wheels, run unit tests, and measure coverage
-# (3) after testing we sign the wheels with the CI's GPG key
-# (4) finally if we are on the release branch we will push the signed wheels to pypi
-
-
 # Abuse YAML notation to make a heredoc. This will be ignored by the CI.
-.__heredoc__: &__heredoc__
+.__doc__: &__doc__
     - | 
 
-        __doc__="""
+        NOTE: INSTRUCTION HAVE BEEN MOVED TO ./dev/setup_secrets.sh
+        This file should need minimal modification.
 
-        docs moved to dev/setup_secrets
-        """ # "  # hack for vim yml syntax highlighter
+        Template for this files is from
+        ~/code/xcookie/xcookie/rc/gitlab-ci.purepy.yml.in
+
+        Templates used in:
+
+        ~/code/kwplot/.gitlab-ci.yml
+        ~/code/kwimage/.gitlab-ci.yml
+        ~/code/kwarray/.gitlab-ci.yml
+        ~/code/kwcoco/.gitlab-ci.yml
+
+        ~/code/ndsampler/.gitlab-ci.yml
+
+        Enable the opencv-hack if needed, and turn on/off the desired versions
+        of Python.
+
 
 stages:
   - build
@@ -30,49 +30,6 @@ stages:
 
 ### TEMPLATES ###
 # Define common templates using YAML anchors
-
-
-.cibuildwheel_template: &cibuildwheel_template
-    stage: 
-        build
-
-    tags:
-        # Tags define which runners will accept which jobs
-        - linux
-        - docker
-        - privileged
-
-    image: gitlab.kitware.com:4567/computer-vision/ci-docker/podman
-
-    script:
-        - podman --version
-        - podman info --debug
-        - python3 -m pip install git+https://github.com/Erotemic/cibuildwheel.git@dev/flow
-        - pwd
-        - ls -al
-        - export CIBW_SKIP="pp* cp27-* cp35-*"
-        - export CIBW_OCI_EXE="podman"
-        # NOTE: this requires that some mechanism exists in cibuildwheel to
-        # ignore this directory when it copys the repo into the container
-        - mkdir -p ".cache/containers/vfs-storage/"
-        - export CIBW_OCI_ROOT=$(realpath ".cache/containers/vfs-storage/")
-        - echo "CIBW_OCI_ROOT = $CIBW_OCI_ROOT"
-        - cibuildwheel --platform linux --print-build-identifiers
-        # - cibuildwheel --output-dir wheelhouse --platform linux --archs x86_64,i686,aarch64,ppc64le,s390x,universal2,arm64,x86,AMD64
-        - cibuildwheel --output-dir wheelhouse --platform linux
-        - ls $CIBW_OCI_ROOT
-        - ls wheelhouse
-
-    artifacts:
-        paths:
-            - wheelhouse/
-
-    # Contents of .cache/containers/vfs-storage are far too large to cache
-    # Not sure if it is possible to cache the download of the images
-    #cache:
-    #    paths:
-    #        - .cache/containers
-    #    TODO: can we use skopeo to cache the images?
 
 .common_template: &common_template
     tags:
@@ -86,29 +43,13 @@ stages:
         # only cache local items.
         PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
+    except:
+        # Don't run the pipeline for new tags
+        - tags
+
     cache:
         paths:
             - .cache/pip
-
-
-.common_test_template: &common_test_template
-    <<: 
-        - *common_template
-
-    stage: 
-        test
-          
-    # Coverage is a regex that will parse the coverage from the test stdout
-    coverage: '/TOTAL.+ ([0-9]{1,3}%)/'
-
-    except:
-        refs:
-          - release 
-          - main 
-          - tags
-        #changes:
-        #    - README.rst
-        #    - CHANGELOG.md
 
 
 .build_template: &build_template
@@ -123,102 +64,63 @@ stages:
         - python -V  # Print out python version for debugging
 
     script: 
-        - python setup.py bdist_wheel 
-
-    cache:
-        paths:
-            - .cache/pip
+        #- python setup.py bdist_wheel --universal
+        - python -m pip install pip -U
+        - python -m pip install setuptools>=0.8 wheel build
+        - python -m build --wheel --outdir wheelhouse
 
     artifacts:
         paths:
-            - dist/*.whl
+            - wheelhouse/*.whl
 
 
 .common_test_template: &common_test_template
+    # Tags define which runners will accept which jobs
     <<: 
         - *common_template
 
+    variables:
+        # Change pip's cache directory to be inside the project directory since we can
+        # only cache local items.
+        PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
     stage: 
         test
-          
+    
+    script: 
+        - ./run_tests.py
+
     # Coverage is a regex that will parse the coverage from the test stdout
     coverage: '/TOTAL.+ ([0-9]{1,3}%)/'
 
-    except:
-        refs:
-          - release 
-          - main 
-          - tags
-        #changes:
-        #    - README.rst
-        #    - CHANGELOG.md
+    #except:
+    #    refs:
+    #      - release 
+    #      - tags
+    #    changes:
+    #        - README.rst
+    #        - CHANGELOG.md
 
 
 # Define anchors to be used in "before_script" parts
 ._setup_virtualenv_template: &_setup_virtualenv_template |-
-    # Setup the correct version of python on this manylinux instance
+    # Setup the correct version of python (which should be the same as this instance)
     python --version  # Print out python version for debugging
+    export PYVER=$(python -c "import sys; print('{}{}'.format(*sys.version_info[0:2]))")
     python -m pip install virtualenv
-    python -m virtualenv venv
-    source venv/bin/activate
+    python -m virtualenv venv$PYVER
+    source venv$PYVER/bin/activate
     pip install pip -U
-    pip install setuptools -U
+    pip install pip setuptools -U
     pip install pygments
-
-._install_strict_minimal_requirements: &_install_strict_minimal_requirements |-
-    ./dev/make_strict_req.sh
-    pip install -r requirements-strict/runtime.txt -r requirements-strict/tests.txt
-    # Hack in opencv for netharn-dependant tests
-    pip install opencv-python-headless==4.5.3.56
-
-._install_strict_full_requirements: &_install_strict_full_requirements |-
-    ./dev/make_strict_req.sh
-    pip install -r requirements-strict/optional.txt -r requirements-strict/runtime.txt -r requirements-strict/tests.txt
-    pip install opencv-python-headless==4.5.3.56
-
-    
-._install_loose_minimal_requirements: &_install_loose_minimal_requirements |-
-    pip install -r requirements/runtime.txt -r requirements/tests.txt
-    pip install opencv-python-headless>=4.5.3.56
-
-
-._install_loose_full_requirements: &_install_loose_full_requirements |-
-    pip install -r requirements/optional.txt -r requirements/runtime.txt -r requirements/tests.txt
-    pip install opencv-python-headless>=4.5.3.56
-
-
-# Hack to test the installed wheel. TODO: make run_tests work better in this case.
+    python --version  # Print out python version for debugging
+        
+        
 ._run_tests_in_sandboxed_dir: &_run_tests_in_sandboxed_dir |-
-    #mkdir -p sandbox && cd sandbox && python -X faulthandler -m pytest --xdoctest-verbose=3 -s --cov-config ../.coveragerc --cov-report html --cov-report term --cov=torch_liberator --xdoc $(python -c "import ubelt; print(ubelt.modname_to_modpath('torch_liberator'))") ../tests
-    mkdir -p sandbox 
-    cd sandbox 
-    PKG_MODPATH=$(python -c "import ubelt; print(ubelt.modname_to_modpath('torch_liberator'))")
-    # Option 1: Use pytest with doctests and unittests
-    python -X faulthandler -m pytest --xdoctest-verbose=3 -s --cov-config ../.coveragerc --cov-report term --cov=torch_liberator --xdoc $PKG_MODPATH ../tests
-    # Option 2: Just the doctests 
-    #python -X faulthandler -m xdoctest --verbose=3 $PKG_MODPATH
+    # Hack to test the installed wheel. TODO: make run_tests work better in this case.
+    MOD_NAME=$(python -c "import tomli; print(tomli.load(open('pyproject.toml', 'rb'))['tool']['xcookie']['mod_name'])")
+    mkdir -p sandbox && cd sandbox && pytest --xdoctest-verbose=3 -s --cov-config ../pyproject.toml --cov-report html --cov-report term --cov="$MOD_NAME" --xdoc $(python -c "import ubelt; print(ubelt.modname_to_modpath('${MOD_NAME}'))") ../tests
 
-    
-._test_full_script: &_test_full_script
-    - ls wheelhouse || echo "wheelhouse does not exist"
-    - MB_PYTHON_TAG=$(echo ${CI_JOB_NAME} | sed 's/.*\/\(.*\)-manylinux2010/\1/')
-    - VERSION=$(python -c "import setup; print(setup.VERSION)")
-    - BDIST_WHEEL_PATH=wheelhouse/torch_liberator-${VERSION}-${MB_PYTHON_TAG}-*manylinux*_x86_64.whl
-    - pip install $BDIST_WHEEL_PATH
-    # - xdoctest torch_liberator --style=google all --mask 
-    - *_run_tests_in_sandboxed_dir
-
-
-._test_minimal_script: &_test_minimal_script
-    - ls wheelhouse || echo "wheelhouse does not exist"
-    - MB_PYTHON_TAG=py3-none-any
-    - VERSION=$(python -c "import setup; print(setup.VERSION)")
-    - BDIST_WHEEL_PATH=dist/torch_liberator-${VERSION}-${MB_PYTHON_TAG}.whl
-    - pip install $BDIST_WHEEL_PATH
-    #- xdoctest -m torch_liberator --style=google all
-    #- export DISABLE_C_EXTENSIONS=1
-    #- pip install -r requirements/tests.txt
-    - *_run_tests_in_sandboxed_dir
     
     
 .test_full_loose_template: &test_full_loose_template
@@ -227,9 +129,14 @@ stages:
 
     before_script:
         - *_setup_virtualenv_template
-        - *_install_loose_full_requirements
 
-    script: *_test_full_script
+    script: 
+      - ls wheelhouse || echo "wheelhouse does not exist"
+      - pip install tomli
+      - MOD_NAME=$(python -c "import tomli; print(tomli.load(open('pyproject.toml', 'rb'))['tool']['xcookie']['mod_name'])")
+      - pip install "${MOD_NAME}"[all] -f wheelhouse  # xcookie: +COMMENT_IF(cv2)
+      #- pip install "${MOD_NAME}"[all,headless] -f wheelhouse  # xcookie: +UNCOMMENT_IF(cv2)
+      - *_run_tests_in_sandboxed_dir
 
 
 .test_minimal_loose_template: &test_minimal_loose_template
@@ -238,9 +145,14 @@ stages:
 
     before_script:
         - *_setup_virtualenv_template
-        - *_install_loose_minimal_requirements
 
-    script: *_test_minimal_script
+    script:
+      - ls wheelhouse || echo "wheelhouse does not exist"
+      - pip install tomli
+      - MOD_NAME=$(python -c "import tomli; print(tomli.load(open('pyproject.toml', 'rb'))['tool']['xcookie']['mod_name'])")
+      - pip install "${MOD_NAME}"[tests] -f wheelhouse  # xcookie: +COMMENT_IF(cv2)
+      #- pip install "${MOD_NAME}"[tests,headless] -f wheelhouse  # xcookie: +UNCOMMENT_IF(cv2)
+      - *_run_tests_in_sandboxed_dir
 
 .test_full_strict_template: &test_full_strict_template
     <<: 
@@ -248,9 +160,15 @@ stages:
 
     before_script:
         - *_setup_virtualenv_template
-        - *_install_strict_full_requirements
 
-    script: *_test_full_script
+    script: 
+      - ls wheelhouse || echo "wheelhouse does not exist"
+      - pip install tomli
+      - MOD_NAME=$(python -c "import tomli; print(tomli.load(open('pyproject.toml', 'rb'))['tool']['xcookie']['mod_name'])")
+      - pip install "${MOD_NAME}"[all-strict] -f wheelhouse  # xcookie: +COMMENT_IF(cv2)
+      #- pip install "${MOD_NAME}"[all-strict,headless-strict] -f wheelhouse  # xcookie: +UNCOMMENT_IF(cv2)
+      #- pip install GDAL==3.3.3 --find-links https://girder.github.io/large_image_wheels -U  # xcookie: +UNCOMMENT_IF(gdal)
+      - *_run_tests_in_sandboxed_dir
 
 
 .test_minimal_strict_template: &test_minimal_strict_template
@@ -259,9 +177,16 @@ stages:
 
     before_script:
         - *_setup_virtualenv_template
-        - *_install_strict_minimal_requirements
 
-    script: *_test_minimal_script
+    script:
+      - ls wheelhouse || echo "wheelhouse does not exist"
+      - pip install tomli
+      - MOD_NAME=$(python -c "import tomli; print(tomli.load(open('pyproject.toml', 'rb'))['tool']['xcookie']['mod_name'])")
+      - pip install "${MOD_NAME}"[runtime-strict,tests-strict] -f wheelhouse  # xcookie: +COMMENT_IF(cv2)
+      #- pip install "${MOD_NAME}"[runtime-strict,tests-strict,headless-strict] -f wheelhouse  # xcookie: +UNCOMMENT_IF(cv2)
+      #- pip install GDAL>=3.3.3 --find-links https://girder.github.io/large_image_wheels -U  # xcookie: +UNCOMMENT_IF(gdal)
+      - *_run_tests_in_sandboxed_dir
+
 
 
 gpgsign/wheels:
@@ -276,20 +201,20 @@ gpgsign/wheels:
 
     script: 
         - ls wheelhouse
-        - ls dist
         - export GPG_EXECUTABLE=gpg
         - export GPG_KEYID=$(cat dev/public_gpg_key)
         - echo "GPG_KEYID = $GPG_KEYID"
-        - source dev/secrets_configuration.sh
+        # Decrypt and import GPG Keys / trust
         # note the variable pointed to by VARNAME_CI_SECRET is a protected variables only available on main and release branch
+        - source dev/secrets_configuration.sh
         - CI_SECRET=${!VARNAME_CI_SECRET}
         - $GPG_EXECUTABLE --version
         - openssl version
         - $GPG_EXECUTABLE --list-keys
-        # note CI_KITWARE_SECRET is a protected variables only available on master and release branch
-        - GLKWS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_public_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
-        - GLKWS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/gpg_owner_trust.enc | $GPG_EXECUTABLE --import-ownertrust
-        - GLKWS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_secret_gpg_subkeys.pgp.enc | $GPG_EXECUTABLE --import 
+        # note CI_KITWARE_SECRET is a protected variables only available on main and release branch
+        - CIS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:CIS -d -a -in dev/ci_public_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
+        - CIS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:CIS -d -a -in dev/gpg_owner_trust.enc | $GPG_EXECUTABLE --import-ownertrust
+        - CIS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:CIS -d -a -in dev/ci_secret_gpg_subkeys.pgp.enc | $GPG_EXECUTABLE --import 
         - GPG_SIGN_CMD="$GPG_EXECUTABLE --batch --yes --detach-sign --armor --local-user $GPG_KEYID"
 
         - |
@@ -305,7 +230,6 @@ gpgsign/wheels:
                 $GPG_EXECUTABLE --verify $WHEEL_PATH.asc $WHEEL_PATH 
             done
         - ls wheelhouse
-        - ls dist
 
     artifacts:
         paths:
@@ -314,7 +238,7 @@ gpgsign/wheels:
     only:
         refs:
             # Gitlab will only expose protected variables on protected branches
-            # (which I've set to be master and release), so only run this stage
+            # (which I've set to be main and release), so only run this stage
             # there.
             - master
             - main
@@ -334,16 +258,43 @@ deploy/wheels:
     script: 
         - pip install six pyopenssl ndg-httpsclient pyasn1 requests[security] twine -U 
         - ls wheelhouse
-        - ls dist
         - |
             WHEEL_PATHS=(wheelhouse/*.whl)
             WHEEL_PATHS_STR=$(printf '"%s" ' "${WHEEL_PATHS[@]}")
+            source dev/secrets_configuration.sh
+            TWINE_PASSWORD=${!VARNAME_TWINE_PASSWORD}
+            TWINE_USERNAME=${!VARNAME_TWINE_USERNAME}
             echo "$WHEEL_PATHS_STR"
             for WHEEL_PATH in "${WHEEL_PATHS[@]}"
             do
                 twine check $WHEEL_PATH.asc $WHEEL_PATH
-                twine upload --username $TWINE_USERNAME --password $TWINE_PASSWORD $WHEEL_PATH.asc $WHEEL_PATH
+                twine upload --username $TWINE_USERNAME --password $TWINE_PASSWORD $WHEEL_PATH.asc $WHEEL_PATH || echo "upload already exists"
             done
+        - | 
+            # Have the server git-tag the release and push the tags
+            export VERSION=$(python -c "import setup; print(setup.VERSION)")
+            # do sed twice to handle the case of https clone with and without a read token
+            URL_HOST=$(git remote get-url origin | sed -e 's|https\?://.*@||g' | sed -e 's|https\?://||g' | sed -e 's|git@||g' | sed -e 's|:|/|g')
+            source dev/secrets_configuration.sh
+            CI_SECRET=${!VARNAME_CI_SECRET}
+            PUSH_TOKEN=${!VARNAME_PUSH_TOKEN}
+            echo "URL_HOST = $URL_HOST"
+            # A git config user name and email is required. Set if needed.
+            if [[ "$(git config user.email)" == "" ]]; then
+                git config user.email "ci@gitlab.org.com"
+                git config user.name "Gitlab-CI"
+            fi
+            TAG_NAME="v${VERSION}"
+            echo "TAG_NAME = $TAG_NAME"
+            if [ $(git tag -l "$TAG_NAME") ]; then
+                echo "Tag already exists"
+            else
+                # if we messed up we can delete the tag
+                # git push origin :refs/tags/$TAG_NAME
+                # and then tag with -f
+                git tag $TAG_NAME -m "tarball tag $VERSION"
+                git push --tags "https://git-push-token:${PUSH_TOKEN}@${URL_HOST}"
+            fi
             
     only:
         refs:
@@ -351,356 +302,284 @@ deploy/wheels:
 
 
 # Aliases for the images that run the tests
+.image_python3_11: &image_python3_11
+    #gitlab.kitware.com:4567/computer-vision/ci-docker/gl-python:3.10
+    python:3.11
+.image_python3_10: &image_python3_10
+    #gitlab.kitware.com:4567/computer-vision/ci-docker/gl-python:3.10
+    python:3.10
 .image_python39: &image_python39
-    gitlab.kitware.com:4567/computer-vision/ci-docker/gl-python:3.9
+    #gitlab.kitware.com:4567/computer-vision/ci-docker/gl-python:3.9
+    python:3.9
 .image_python38: &image_python38
-    gitlab.kitware.com:4567/computer-vision/ci-docker/gl-python:3.8
+    #gitlab.kitware.com:4567/computer-vision/ci-docker/gl-python:3.8
+    python:3.8
 .image_python37: &image_python37
-    gitlab.kitware.com:4567/computer-vision/ci-docker/gl-python:3.7
-.image_python36: &image_python36
-    gitlab.kitware.com:4567/computer-vision/ci-docker/gl-python:3.6
+    #gitlab.kitware.com:4567/computer-vision/ci-docker/gl-python:3.7
+    python:3.7
+    
 
 
 ### JOBS ###
 # Define the actual jobs
+#
+# ---------------
+# Python 3.11 Jobs
+
+
+#build/cp3_11-cp3_11-linux:
+#    <<: 
+#        - *build_template
+#    image:
+#        *image_python3_11
+
+#test_full_loose/cp3_11-cp3_11-linux:
+#    <<: 
+#        - *test_full_loose_template
+#    image:
+#        *image_python3_11
+#    needs: 
+#        -  build/cp3_11-cp3_11-linux
+
+#test_minimal_loose/cp3_11-cp3_11-linux:
+#    <<: 
+#        - *test_minimal_loose_template
+#    image:
+#        *image_python3_11
+#    needs: 
+#        -  build/cp3_11-cp3_11-linux
+
+#test_full_strict/cp3_11-cp3_11-linux:
+#    <<: 
+#        - *test_full_strict_template
+#    image:
+#        *image_python3_11
+#    needs: 
+#        -  build/cp3_11-cp3_11-linux
+
+#test_minimal_strict/cp3_11-cp3_11-linux:
+#    <<: 
+#        - *test_minimal_strict_template
+#    image:
+#        *image_python3_11
+#    needs: 
+#        -  build/cp3_11-cp3_11-linux
+
+
+# ---------------
+# Python 3.10 Jobs
+
+
+build/cp3_10-cp3_10-linux:
+    <<: 
+        - *build_template
+    image:
+        *image_python3_10
+
+test_full_loose/cp3_10-cp3_10-linux:
+    <<: 
+        - *test_full_loose_template
+    image:
+        *image_python3_10
+    needs: 
+        -  build/cp3_10-cp3_10-linux
+
+test_minimal_loose/cp3_10-cp3_10-linux:
+    <<: 
+        - *test_minimal_loose_template
+    image:
+        *image_python3_10
+    needs: 
+        -  build/cp3_10-cp3_10-linux
+
+test_full_strict/cp3_10-cp3_10-linux:
+    <<: 
+        - *test_full_strict_template
+    image:
+        *image_python3_10
+    needs: 
+        -  build/cp3_10-cp3_10-linux
+
+test_minimal_strict/cp3_10-cp3_10-linux:
+    <<: 
+        - *test_minimal_strict_template
+    image:
+        *image_python3_10
+    needs: 
+        -  build/cp3_10-cp3_10-linux
 
 # ---------------
 # Python 3.9 Jobs
 
-build/cp39-cp39-manylinux2010:
-    <<: 
-        - *cibuildwheel_template
-    variables:
-        CIBW_BUILD: "cp39-*"
 
-test_full_loose/cp39-cp39-manylinux2010:
+build/cp39-cp39-linux:
+    <<: 
+        - *build_template
+    image:
+        *image_python39
+
+test_full_loose/cp39-cp39-linux:
     <<: 
         - *test_full_loose_template
     image:
         *image_python39
     needs: 
-        -  build/cp39-cp39-manylinux2010
+        -  build/cp39-cp39-linux
 
-test_minimal_loose/cp39-cp39-manylinux2010:
+test_minimal_loose/cp39-cp39-linux:
     <<: 
         - *test_minimal_loose_template
     image:
         *image_python39
     needs: 
-        -  build/py3-none-any
+        -  build/cp39-cp39-linux
 
-test_minimal_strict/cp39-cp39-manylinux2010:
-    <<: 
-        - *test_minimal_strict_template
-    image:
-        *image_python39
-    needs: 
-        -  build/py3-none-any
-
-test_full_strict/cp39-cp39-manylinux2010:
+test_full_strict/cp39-cp39-linux:
     <<: 
         - *test_full_strict_template
     image:
         *image_python39
     needs: 
-        -  build/cp39-cp39-manylinux2010
+        -  build/cp39-cp39-linux
+
+test_minimal_strict/cp39-cp39-linux:
+    <<: 
+        - *test_minimal_strict_template
+    image:
+        *image_python39
+    needs: 
+        -  build/cp39-cp39-linux
 
 # ---------------
 # Python 3.8 Jobs
 
-build/cp38-cp38-manylinux2010:
+build/cp38-cp38-linux:
     <<: 
-        - *cibuildwheel_template
-    variables:
-        CIBW_BUILD: "cp38-*"
+        - *build_template
+    image:
+        *image_python38
 
-test_full_loose/cp38-cp38-manylinux2010:
+test_full_loose/cp38-cp38-linux:
     <<: 
         - *test_full_loose_template
     image:
         *image_python38
     needs: 
-        -  build/cp38-cp38-manylinux2010
+        -  build/cp38-cp38-linux
 
-test_minimal_loose/cp38-cp38-manylinux2010:
+test_minimal_loose/cp38-cp38-linux:
     <<: 
         - *test_minimal_loose_template
     image:
         *image_python38
     needs: 
-        -  build/py3-none-any
+        -  build/cp38-cp38-linux
 
-test_minimal_strict/cp38-cp38-manylinux2010:
-    <<: 
-        - *test_minimal_strict_template
-    image:
-        *image_python38
-    needs: 
-        -  build/py3-none-any
-
-test_full_strict/cp38-cp38-manylinux2010:
+test_full_strict/cp38-cp38-linux:
     <<: 
         - *test_full_strict_template
     image:
         *image_python38
     needs: 
-        -  build/cp38-cp38-manylinux2010
+        -  build/cp38-cp38-linux
+
+test_minimal_strict/cp38-cp38-linux:
+    <<: 
+        - *test_minimal_strict_template
+    image:
+        *image_python38
+    needs: 
+        -  build/cp38-cp38-linux
 
 # ---------------
 # Python 3.7 Jobs
 
-build/cp37-cp37m-manylinux2010:
-    <<: 
-        - *cibuildwheel_template
-    variables:
-        CIBW_BUILD: "cp37-*"
 
-test_full_loose/cp37-cp37m-manylinux2010:
+build/cp37-cp37-linux:
+    <<: 
+        - *build_template
+    image:
+        *image_python37
+
+test_full_loose/cp37-cp37-linux:
     <<: 
         - *test_full_loose_template
     image:
         *image_python37
     needs: 
-        -  build/cp37-cp37m-manylinux2010
+        -  build/cp37-cp37-linux
 
-test_minimal_loose/cp37-cp37m-manylinux2010:
+test_minimal_loose/cp37-cp37-linux:
     <<: 
         - *test_minimal_loose_template
     image:
         *image_python37
     needs: 
-        -  build/py3-none-any
+        -  build/cp37-cp37-linux
 
-test_minimal_strict/cp37-cp37m-manylinux2010:
-    <<: 
-        - *test_minimal_strict_template
-    image:
-        *image_python37
-    needs: 
-        -  build/py3-none-any
-
-test_full_strict/cp37-cp37m-manylinux2010:
+test_full_strict/cp37-cp37-linux:
     <<: 
         - *test_full_strict_template
     image:
         *image_python37
     needs: 
-        -  build/cp37-cp37m-manylinux2010
+        -  build/cp37-cp37-linux
 
-
-# ---------------
-# Python 3.6 Jobs
-
-build/cp36-cp36m-manylinux2010:
-    <<: 
-        - *cibuildwheel_template
-    variables:
-        CIBW_BUILD: "cp36-*"
-
-test_full_loose/cp36-cp36m-manylinux2010:
-    <<: 
-        - *test_full_loose_template
-    image:
-        *image_python36
-    needs: 
-        -  build/cp36-cp36m-manylinux2010
-
-test_minimal_loose/cp36-cp36m-manylinux2010:
-    <<: 
-        - *test_minimal_loose_template
-    image:
-        *image_python36
-    needs: 
-        -  build/py3-none-any
-
-test_minimal_strict/cp36-cp36m-manylinux2010:
+test_minimal_strict/cp37-cp37-linux:
     <<: 
         - *test_minimal_strict_template
     image:
-        *image_python36
+        *image_python37
     needs: 
-        -  build/py3-none-any
+        -  build/cp37-cp37-linux
 
-test_full_strict/cp36-cp36m-manylinux2010:
-    <<: 
-        - *test_full_strict_template
-    image:
-        *image_python36
-    needs: 
-        -  build/cp36-cp36m-manylinux2010
-
-
-# ---------------
-# Universal Python Jobs
-build/py3-none-any:
-    <<: 
-        - *common_template
-
-    stage: 
-        build
-
-    image: gitlab.kitware.com:4567/computer-vision/ci-docker/gl-python:3.7
-
-    before_script:
-        - python -V  # Print out python version for debugging
-        - pip install virtualenv
-        - virtualenv venv
-        - source venv/bin/activate
-        - pip install pip -U
-        - pip install pip setuptools -U
-
-    script: 
-        - export DISABLE_C_EXTENSIONS=1
-        - DISABLE_C_EXTENSIONS=1 python setup.py bdist_wheel
-        - DISABLE_C_EXTENSIONS=1 python setup.py sdist
-        - ls dist
-          
-    artifacts:
-        paths:
-            - dist/*.whl
-    cache:
-        paths:
-            - .cache/pip
-
-
-gpgsign/py3-none-any:
-    <<: 
-        - *common_template
-
-    stage: 
-        gpgsign
-
-    script: 
-        - ls dist
-        - MB_PYTHON_TAG=py3-none-any
-        - VERSION=$(python -c "import setup; print(setup.VERSION)")
-        - BDIST_WHEEL_PATH=dist/torch_liberator-${VERSION}-${MB_PYTHON_TAG}.whl
-        - export GPG_EXECUTABLE=gpg
-        - export GPG_KEYID=$(cat dev/public_gpg_key)
-        - echo "GPG_KEYID = $GPG_KEYID"
-        - source dev/secrets_configuration.sh
-        # note the variable pointed to by VARNAME_CI_SECRET is a protected variables only available on main and release branch
-        - CI_SECRET=${!VARNAME_CI_SECRET}
-        - $GPG_EXECUTABLE --version
-        - openssl version
-        - $GPG_EXECUTABLE --list-keys
-        # note CI_KITWARE_SECRET is a protected variables only available on master and release branch
-        - GLKWS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_public_gpg_key.pgp.enc | $GPG_EXECUTABLE --import 
-        - GLKWS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/gpg_owner_trust.enc | $GPG_EXECUTABLE --import-ownertrust
-        - GLKWS=$CI_SECRET openssl enc -aes-256-cbc -pbkdf2 -md SHA512 -pass env:GLKWS -d -a -in dev/ci_secret_gpg_subkeys.pgp.enc | $GPG_EXECUTABLE --import 
-        - GPG_SIGN_CMD="$GPG_EXECUTABLE --batch --yes --detach-sign --armor --local-user $GPG_KEYID"
-        #- # $GPG_EXECUTABLE --list-keys
-        - echo "Signing wheels"
-        - $GPG_SIGN_CMD --output $BDIST_WHEEL_PATH.asc $BDIST_WHEEL_PATH
-        - ls dist
-        - echo "Verifying wheels"
-        - $GPG_EXECUTABLE --verify $BDIST_WHEEL_PATH.asc $BDIST_WHEEL_PATH  || echo "hack, the first run of gpg very fails"
-        - $GPG_EXECUTABLE --verify $BDIST_WHEEL_PATH.asc $BDIST_WHEEL_PATH 
-        - echo "Verified wheels"
-
-    artifacts:
-        paths:
-            - dist/*.asc
-
-    only:
-        refs:
-            # Gitlab will only expose protected variables on protected branches
-            # (which I've set to be master and release), so only run this stage
-            # there.
-            - master
-            - main
-            - release
-    image:
-        python:3.7
-
-deploy/py3-none-any:
-    <<: 
-        - *common_template
-
-    image:
-        python:3.7
-
-    stage: 
-        deploy
-
-    script: 
-        - ls dist
-        - MB_PYTHON_TAG=py3-none-any
-        - VERSION=$(python -c "import setup; print(setup.VERSION)")
-        - BDIST_WHEEL_PATH=dist/torch_liberator-${VERSION}-${MB_PYTHON_TAG}.whl
-        - pip install six pyopenssl ndg-httpsclient pyasn1 -U 
-        - pip install requests[security] twine 
-        - echo "Checking wheels"
-        - ls -al ${BDIST_WHEEL_PATH}*
-        - twine check $BDIST_WHEEL_PATH.asc $BDIST_WHEEL_PATH
-        - echo "Uploading wheels"
-        # todo, can we tag the branch here as well?
-        # note TWINE_USERNAME and TWINE_PASSWORD are protected variables only available on master and release branch
-        - twine upload --username $TWINE_USERNAME --password $TWINE_PASSWORD $BDIST_WHEEL_PATH.asc $BDIST_WHEEL_PATH
-        # Have the server git-tag the release and push the tags
-        - VERSION=$(python -c "import setup; print(setup.VERSION)")
-        # do sed twice to handle the case of https clone with and without a read token
-        - URL_HOST=$(git remote get-url origin | sed -e 's|https\?://.*@||g' | sed -e 's|https\?://||g')
-        - echo "URL_HOST = $URL_HOST"
-        - git config user.email "ci@gitlab.kitware.com"
-        - git config user.name "Gitlab-CI"
-        - git tag $VERSION -m "tarball tag $VERSION"
-        - git push --tags "https://${GIT_PUSH_TOKEN}@${URL_HOST}"
-            
-    only:
-        refs:
-            - release
 
 
 .__local_docker_heredoc__:
-        - | 
+    - | 
+        # Commands to help developers debug pipelines on their local machine
+        # Grab the base docker image, (forwarding your ssh credentials), clone
+        # the watch repo, create the environment, and run the tests. 
+        #docker login gitlab.kitware.com:4567
+        #IMAGE_NAME=gitlab.kitware.com:4567/computer-vision/ci-docker/gl-python:3.8
 
-            # Commands to help developers debug pipelines on their local machine
-            # Grab the base docker image, (forwarding your ssh credentials), clone
-            # the torch_liberator repo, create the environment, and run the tests. 
-            docker login gitlab.kitware.com:4567
+        # Use whatever image is defined for Python39 in this file and start a docker session
+        IMAGE_NAME=$(cat .gitlab-ci.yml | yq -r '.".image_python3_10"')
+        docker run -v $PWD:/io:ro -v $HOME/.cache/pip:/pip_cache -it $IMAGE_NAME bash
 
-            docker pull gitlab.kitware.com:4567/computer-vision/ci-docker/gl-python:3.9
-            docker run -v $PWD:/io:ro -it gitlab.kitware.com:4567/computer-vision/ci-docker/gl-python:3.9 bash
-            cd $HOME
-            git clone /io ./torch_liberator
-            cd $HOME/torch_liberator
+        # Will need to chmod things afterwords
+        export PIP_CACHE_DIR=/pip_cache
+        echo $PIP_CACHE_DIR
+        chmod -R o+rw $PIP_CACHE_DIR
+        chmod -R o+rw $PIP_CACHE_DIR
+        chmod -R g+rw $PIP_CACHE_DIR
+        USER=$(whoami)
+        chown -R $USER $PIP_CACHE_DIR
+        cd $HOME
+        git clone /io ./repo
 
-            python --version  # Print out python version for debugging
-            python -m pip install virtualenv
-            python -m virtualenv venv
-            source venv/bin/activate
-            pip install pip -U
-            pip install setuptools -U
-            pip install pygments
+        cd $HOME/repo
 
-            python -V  # Print out python version for debugging
-            pip install virtualenv
-            virtualenv venv
-            source venv/bin/activate
-            pip install pip -U
-            pip install pip setuptools -U
+        # Make a virtualenv
+        export PYVER=$(python -c "import sys; print('{}{}'.format(*sys.version_info[0:2]))")
+        pip install virtualenv
+        virtualenv venv$PYVER
+        source venv$PYVER/bin/activate
+        #pip install pip -U
+        #pip install pip setuptools -U
 
-            export DISABLE_C_EXTENSIONS=1
-            DISABLE_C_EXTENSIONS=1 python setup.py bdist_wheel
-            DISABLE_C_EXTENSIONS=1 python setup.py sdist
-            ls dist
+        # FULL STRICT VARIANT
+        pip install -e .[all-strict,headless-strict]
+        ./run_tests.py
 
-            # STRICT VARIANT
-            ./dev/make_strict_req.sh
-            pip install -r requirements-strict/runtime.txt -r requirements-strict/tests.txt
-            # Hack in opencv for netharn-dependant tests
-            pip install opencv-python-headless==4.5.3.56
+        # FULL LOOSE VARIANT
+        pip install -e .[all,headless]
+        ./run_tests.py
 
-            MB_PYTHON_TAG=py3-none-any
-            VERSION=$(python -c "import setup; print(setup.VERSION)")
-            BDIST_WHEEL_PATH=dist/torch_liberator-${VERSION}-${MB_PYTHON_TAG}.whl
-            pip install $BDIST_WHEEL_PATH
+        # MINIMAL STRICT VARIANT
+        pip install -e .[runtime-strict,tests-strict]
+        ./run_tests.py
 
-            mkdir -p sandbox 
-            cd sandbox 
-            PKG_MODPATH=$(python -c "import ubelt; print(ubelt.modname_to_modpath('torch_liberator'))")
-            echo "PKG_MODPATH=$PKG_MODPATH"
-            # python -X faulthandler -m pytest --xdoctest-verbose=3 -s --cov-config ../.coveragerc --cov-report term --cov=torch_liberator --xdoc $PKG_MODPATH ../tests
-            # Option: Just the doctests 
-            python -X faulthandler -m xdoctest --verbose=3 $PKG_MODPATH
+        # MINIMAL LOOSE VARIANT
+        pip install -e .[tests]
+        ./run_tests.py

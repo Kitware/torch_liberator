@@ -5,7 +5,16 @@ We are currently working on porting this changelog to the specifications in
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## Version 0.1.1 - Unreleased
+## Version 0.2.0 - Unreleased
+
+### Changed:
+
+* Moved implementation of the backend maximum common subtree algorithm to `https://github.com/Erotemic/networkx_algo_common_subtree`.
+* The weight mapping is now returned by the partial state loading and pretrained forward
+* Changed defaults to use the isomorphism algorithm by default and other tweaks.
+
+
+## Version 0.1.1 - Released 2021-11-01
 
 ### Changed
 
