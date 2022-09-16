@@ -1,8 +1,7 @@
 # python ~/local/tools/supported_python_versions_pip.py torch
 # python ~/local/tools/supported_python_versions_pip.py networkx
-ubelt>=1.1.2
+ubelt>=1.2.2
 liberator>=0.0.1
-six >= 1.11.0
 
 torch>=1.11.0    ;                            python_version >= '3.10'    # Python 3.10+
 torch>=1.11.0    ; python_version < '3.10' and python_version >= '3.9'    # Python 3.9

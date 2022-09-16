@@ -9,10 +9,10 @@ from os.path import join
 import warnings
 
 
-def load_partial_state(model, model_state_dict, leftover=None,
-                       ignore_unset=False, verbose=2,
-                       mangle=True, association=None,
-                       initializer=None):
+def load_partial_state(model, model_state_dict, leftover='noop',
+                       ignore_unset=False, verbose=3,
+                       mangle=True, association='isomorphism',
+                       allow_efficiency_tricks=True, initializer=None):
     """
     Load as much state from a state dict into a model
 
@@ -36,6 +36,11 @@ def load_partial_state(model, model_state_dict, leftover=None,
             placed in a larger one. Note be careful when mangling a
             classification layer if class indexes are not aligned.
 
+        allow_efficiency_tricks (bool):
+            If False, the isomorphism algorithm is run directly on the
+            network graphs. This can be slow. When True common things that are
+            usually true in pytorch models are used to speedup the computation.
+
         verbose (int): verbosity level
 
     Returns:
@@ -43,6 +48,11 @@ def load_partial_state(model, model_state_dict, leftover=None,
 
     TODO:
         - [ ] Allow user to specify how incompatible layers are handled.
+
+    Ignore:
+        import xdev
+        from torch_liberator.initializer import *  # NOQA
+        globals().update(xdev.get_func_kwargs(load_partial_state))
 
     Notes:
 
@@ -126,23 +136,24 @@ def load_partial_state(model, model_state_dict, leftover=None,
         >>> model_state_dict2 = {'prefix.' + k: v for k, v in model_state_dict.items()}
         >>> import ubelt as ub
         >>> with ub.Timer(verbose=2, label='strict'):
-        >>>     load_partial_state(model, model_state_dict, association='strict', verbose=0)
+        >>>     load_partial_state(model, model_state_dict, association='strict', verbose=1)
         >>> with ub.Timer(verbose=2, label='prefix-hack'):
-        >>>     load_partial_state(model, model_state_dict, association='prefix-hack', verbose=0)
+        >>>     load_partial_state(model, model_state_dict, association='prefix-hack', verbose=1)
         >>> with ub.Timer(verbose=2, label='module-hack'):
-        >>>     load_partial_state(model, model_state_dict, association='module-hack', verbose=0)
+        >>>     load_partial_state(model, model_state_dict, association='module-hack', verbose=1)
         >>> with ub.Timer(verbose=2, label='embedding'):
-        >>>     load_partial_state(model, model_state_dict, association='embedding', verbose=0)
-
-        >>> _ = load_partial_state(model, model_state_dict, association='prefix-hack', verbose=1)
-        >>> _ = load_partial_state(model, model_state_dict, association='module-hack', verbose=1)
+        >>>     load_partial_state(model, model_state_dict, association='embedding', verbose=1)
     """
     if association is None:
-        association = 'module-hack'  # old default
+        association = 'isomorphism'  # old default
+        # association = 'module-hack'  # old default
         # association = 'prefix-hack'  # new default
 
     if initializer is not None:
-        warnings.warn('initializer is deprecated use leftover')
+        ub.schedule_deprecation(
+            'torch_liberator', 'initializer', 'arg',
+            migration='Use leftover instead',
+            deprecate='0.1.0', error='0.3.0', remove='0.4.0')
         leftover = initializer
 
     self_state = model.state_dict()
@@ -156,39 +167,13 @@ def load_partial_state(model, model_state_dict, leftover=None,
         other_keys = set(model_state_dict)
         self_keys = set(self_state)
 
-        if 0:
-            # Automatic way to reduce nodes in the trees?
-            # If node b always follows node a, can we contract it?
-            nodes1 = [n for p in other_keys for n in p.split('.')]
-            nodes2 = [n for p in self_keys for n in p.split('.')]
-            tups1 = list(tup for key in other_keys for tup in ub.iter_window(key.split('.'), 2))
-            tups2 = list(tup for key in self_keys for tup in ub.iter_window(key.split('.'), 2))
-            x = ub.ddict(list)
-            for a, b in tups1:
-                x[a].append(b)
-            for a, b in tups2:
-                x[a].append(b)
-
-            nodehist = ub.dict_hist(nodes1 + nodes2)
-
-            for k, v in x.items():
-                print('----')
-                print(k)
-                print(nodehist[k])
-                follow_hist = ub.dict_hist(v)
-                print(follow_hist)
-                total = sum(follow_hist.values())
-                if ub.allsame(follow_hist.values()) and total == nodehist[k]:
-                    print('CONTRACT')
-
-            # pair_freq = ub.dict_hist(ub.flatten([tups1, tups2]))
-            # print(forest_str(paths_to_otree(other_keys, '.')))
-
         # common_keys = other_keys.intersection(self_keys)
         # if not common_keys:
-        if not other_keys.issubset(self_keys):
+        if other_keys.issubset(self_keys):
+            mapping = ub.dzip(other_keys, other_keys)
+        else:
             if association == 'strict':
-                pass
+                mapping = None  # FIXME
             elif association == 'module-hack':
                 # If there are no common keys try a hack
                 prefix = 'module.'
@@ -203,6 +188,7 @@ def load_partial_state(model, model_state_dict, leftover=None,
                     model_state_dict = ub.map_keys(fix1, model_state_dict)
                 elif smap(fix2, other_keys).intersection(self_keys):
                     model_state_dict = ub.map_keys(fix2, model_state_dict)
+                mapping = None  # FIXME
             elif association == 'prefix-hack':
                 import functools
                 def add_prefix(k, prefix):
@@ -222,6 +208,7 @@ def load_partial_state(model, model_state_dict, leftover=None,
                         else:
                             raise AssertionError
                         model_state_dict = ub.map_keys(func, model_state_dict)
+                mapping = None  # FIXME
             elif association in {'embedding', 'isomorphism'}:
                 if verbose > 1:
                     print('Using subpath {} association, may take some time'.format(association))
@@ -229,7 +216,7 @@ def load_partial_state(model, model_state_dict, leftover=None,
                 paths1 = sorted(other_keys)
                 paths2 = sorted(self_state)
 
-                if 1:
+                if allow_efficiency_tricks:
                     # hack to filter to reduce tree size in embedding problem
                     def shrink_paths(paths):
                         new_paths = []
@@ -298,9 +285,9 @@ def load_partial_state(model, model_state_dict, leftover=None,
                         raise
             else:
                 raise KeyError(association)
-        return model_state_dict
+        return model_state_dict, mapping
 
-    other_state = _fix_keys(model_state_dict)
+    other_state, mapping = _fix_keys(model_state_dict)
 
     self_unset_keys = set(self_state.keys())  # will end up as keys in our that were not set
     other_unused_keys = set(other_state.keys())  # will end up as keys in the other model that were not used
@@ -309,7 +296,7 @@ def load_partial_state(model, model_state_dict, leftover=None,
 
     for key, other_value in other_state.items():
         if key not in self_state:
-            if verbose > 0:
+            if verbose > 1:
                 print('Skipping {} because it does not exist'.format(key))
             seen_keys['skipped'].add(key)
         else:
@@ -321,31 +308,33 @@ def load_partial_state(model, model_state_dict, leftover=None,
                 seen_keys['full_add'].add(key)
             elif len(other_value.size()) == len(self_value.size()):
                 if not mangle:
-                    if verbose > 0:
+                    if verbose > 1:
                         print('Skipping {} due to incompatable size and mangle=False'.format(key))
                         print(' * self  = {!r}'.format(self_value.size()))
                         print(' * other = {!r}'.format(other_value.size()))
                     seen_keys['skipped'].add(key)
                 elif key.endswith('bias'):
-                    if verbose > 0:
+                    if verbose > 1:
                         print('Skipping {} due to incompatable size'.format(key))
                         print(' * self  = {!r}'.format(self_value.size()))
                         print(' * other = {!r}'.format(other_value.size()))
                     seen_keys['skipped'].add(key)
                 else:
                     if leftover is None:
-                        if verbose > 0:
-                            print('Skipping {} due to incompatable size and no default initializer'.format(key))
+                        if verbose > 1:
+                            print('Skipping {} due to incompatable size and no leftover initializer'.format(key))
                             print(' * self  = {!r}'.format(self_value.size()))
                             print(' * other = {!r}'.format(other_value.size()))
                         seen_keys['skipped'].add(key)
                     else:
-                        if verbose > 0:
+                        if verbose > 1:
                             print('Partially add {} with incompatable size'.format(key))
                             print(' * self  = {!r}'.format(self_value.size()))
                             print(' * other = {!r}'.format(other_value.size()))
                         # Initialize all weights in case any are unspecified
-                        if leftover is None:
+                        if isinstance(leftover, str) and leftover == 'noop':
+                            pass
+                        elif leftover is not None:
                             try:
                                 leftover(self_state[key])
                             except Exception:
@@ -371,7 +360,7 @@ def load_partial_state(model, model_state_dict, leftover=None,
                         else:
                             seen_keys['partial_add_all'].add(key)
             else:
-                if verbose > 0:
+                if verbose > 1:
                     print('Skipping {} due to incompatable size'.format(key))
                     print(' * self  = {!r}'.format(self_value.size()))
                     print(' * other = {!r}'.format(other_value.size()))
@@ -389,29 +378,32 @@ def load_partial_state(model, model_state_dict, leftover=None,
                 print('Pretrained weights are a partial fit')
             else:
                 print('Pretrained weights do not fit!')
-        if verbose > 1:
+        if verbose > 2:
             print('Seen Keys: {}'.format(ub.repr2(seen_keys, nl=2)))
             print('Self Unset Keys: {}'.format(ub.repr2(self_unset_keys, nl=1)))
             print('Other Unused keys: {}'.format(ub.repr2(other_unused_keys, nl=1)))
             print('summary:')
-            seen_sum = ub.map_vals(len, seen_keys)
+            seen_sum = ub.map_values(len, seen_keys)
             print('Seen Num: {}'.format(ub.repr2(seen_sum, nl=2)))
             print('Self Unset Num: {}'.format(ub.repr2(len(self_unset_keys), nl=1)))
             print('Other Unused Num: {}'.format(ub.repr2(len(other_unused_keys), nl=1)))
         if leftover:
             if verbose > 0:
-                print('Initializing unused keys using {}'.format(leftover))
+                print('Initializing {} unused keys using {}'.format(len(self_unset_keys), leftover))
             for key in self_unset_keys:
                 if key.endswith('.num_batches_tracked'):
                     pass  # ignore num_batches_tracked
                 elif key.endswith('.bias'):
                     self_state[key].fill_(0)
                 else:
-                    try:
-                        leftover(self_state[key])
-                    except Exception:
-                        if verbose > 0:
-                            print('Unable to init {} with {}'.format(key, leftover))
+                    if isinstance(leftover, str) and leftover == 'noop':
+                        pass
+                    else:
+                        try:
+                            leftover(self_state[key])
+                        except Exception:
+                            if verbose > 0:
+                                print('Unable to init {} with {}'.format(key, leftover))
 
     else:
         if verbose > 0:
@@ -419,10 +411,25 @@ def load_partial_state(model, model_state_dict, leftover=None,
     model.load_state_dict(self_state)
 
     info = {
+        'mapping': mapping,
         'seen': seen_keys,
         'self_unset': self_unset_keys,
         'other_unused': other_unused_keys
     }
+
+    if verbose > 0:
+        summary = {
+            'association': association,
+            'leftover': leftover,
+            'mangle': mangle,
+            'len_nodes_self': len(self_state),
+            'len_nodes_other': len(model_state_dict),
+            'len_mapping': 'NotImplemented' if mapping is None else len(mapping),
+            'seen': ub.udict(seen_keys).map_values(len),
+            'self_unset': len(self_unset_keys),
+            'other_unused': len(other_unused_keys),
+        }
+        print('load partial state (other -> self) summary: ' + ub.repr2(summary, nl=2, sort=0))
     return info
 
 
@@ -440,9 +447,84 @@ class Pretrained(object):
             While it is best practice to use an explicit filepath, we do allow
             `fpath` be a "fuzzy" glob string as long as the pattern resolves to
             a single file, otherwise an error will be thrown.
+
+        leftover (callable): fallback method for initializing incompatible
+             areas, if none then those areas are left as-is.
+
+        association (str): controls how we search for the association between
+            the two model states. Can be strict, module-hack, prefix-hack,
+            embedding, or isomorphism.  Default is: isomorphism.
+
+        mangle (bool, default=True): If True, mangles tensors that have the
+            same key, but different shapes forcing them to fit. This might
+            destroy information when forcing a a larger tensor into a smaller
+            tensor, or leave extra uninitialized room when a small tensor is
+            placed in a larger one. Note be careful when mangling a
+            classification layer if class indexes are not aligned.
+
+        allow_efficiency_tricks (bool):
+            If False, the isomorphism algorithm is run directly on the
+            network graphs. This can be slow. When True common things that are
+            usually true in pytorch models are used to speedup the computation.
+
+    Example:
+        >>> from torch_liberator.initializer import Pretrained
+        >>> import torchvision
+        >>> import torch
+        >>> class CustomModel(torch.nn.Module):
+        >>>     def __init__(self, classes=1000, width_per_group=64):
+        >>>         super().__init__()
+        >>>         self.module = torchvision.models.resnet50(num_classes=classes, width_per_group=width_per_group)
+        >>>         self.extra = torch.nn.Linear(1, 1)
+        >>> import ubelt as ub
+        >>> dpath = ub.Path.appdir('torch_liberator/doctests/pretrained').ensuredir()
+        >>> model1 = CustomModel()
+        >>> model_state_dict = model1.state_dict()
+        >>> checkpoint_fpath = dpath / 'checkpoint1.ckpt'
+        >>> with open(checkpoint_fpath, 'wb') as file:
+        >>>     torch.save(model_state_dict, file)
+        >>> # Construct the initializer that will try and force these
+        >>> # checkpoint weights into some other model.
+        >>> initializer = Pretrained(checkpoint_fpath)
+        >>> #
+        >>> # Basic test: load the weights into something exactly the same from a checkpoint path
+        >>> model2_v0 = CustomModel()
+        >>> info = initializer.forward(model2_v0)
+        >>> #
+        >>> # Advanced setting 1: the number of classes changed
+        >>> model2_v1 = CustomModel(classes=20)
+        >>> info = initializer.forward(model2_v1)
+        >>> #
+        >>> # Advanced setting 2: the model shrunk
+        >>> model2_v2 = CustomModel(classes=20, width_per_group=32)
+        >>> info = initializer.forward(model2_v2)
+        >>> #
+        >>> # Advanced setting 3: the model grew
+        >>> model2_v3 = CustomModel(classes=1001, width_per_group=128)
+        >>> info = initializer.forward(model2_v3)
+        >>> #
+        >>> # Advanced setting 4: The model is a subtree of the original model
+        >>> model3_v4 = CustomModel(classes=1001, width_per_group=128).module
+        >>> info = initializer.forward(model3_v4)
+        >>> # Advanced setting 5: The model is a supertree of the original model
+        >>> class SuperCustomModel(torch.nn.Module):
+        >>>     def __init__(self, classes=1000, width_per_group=64):
+        >>>         super().__init__()
+        >>>         self.orig = CustomModel(classes=classes, width_per_group=width_per_group)
+        >>>         self.extra3 = torch.nn.Linear(3, 5)
+        >>> model3_v5 = SuperCustomModel(classes=1001, width_per_group=128)
+        >>> info = initializer.forward(model3_v5)
+
     """
-    def __init__(self, fpath):
+    def __init__(self, fpath, mangle=True, leftover='noop', ignore_unset=False,
+                 association='isomorphism', allow_efficiency_tricks=True, verbose=1):
         self.fpath = fpath
+        self.verbose = verbose
+        self.mangle = mangle
+        self.ignore_unset = ignore_unset
+        self.leftover = leftover
+        self.association = association
+        self.allow_efficiency_tricks = allow_efficiency_tricks
 
     def __nice__(self):
         return self.fpath
@@ -492,11 +574,16 @@ class Pretrained(object):
                         'but got cands{!r}'.format(fpath, cands))
         return fpath
 
-    def forward(self, model, verbose=2):
+    def forward(self, model, verbose=None):
         """
-        Apply the pretrained weights to the model
+        Apply the pretrained weights (perhaps partially) to the model
+
+        Returns:
+            Dict: detailed information about how initialization was applied.
         """
         from torch_liberator import util
+        if verbose is None:
+            verbose = self.verbose
 
         main_device_id = _main_device_id_from_data(model)
         fpath = self._rectify_fpath()
@@ -525,8 +612,12 @@ class Pretrained(object):
                     ))
         # Remove any DataParallel / DataSerial
         raw_model = _raw_model(model)
-        info = load_partial_state(raw_model, model_state_dict, leftover=None,
-                                  mangle=False, verbose=verbose)
+        info = load_partial_state(
+            raw_model, model_state_dict, leftover=self.leftover,
+            mangle=self.mangle, association=self.association, verbose=verbose,
+            ignore_unset=self.ignore_unset,
+            allow_efficiency_tricks=self.allow_efficiency_tricks,
+            )
         return info
 
 
@@ -612,7 +703,7 @@ def _torch_load(fpath, main_device_id=None):
             return storage
         else:
             return storage.cuda(main_device_id)
-    print('Loading data onto {} from {}'.format(main_device_id, fpath))
+    print('Loading data onto device={} from fpath={}'.format(main_device_id, fpath))
     try:
         return torch.load(fpath, map_location=_map_location)
     except Exception:
@@ -641,6 +732,8 @@ def _best_prefix_transform(set1, target_set2):
         >>> target_set2.add('JUNK')
         >>> _best_prefix_transform(set1, target_set2)
     """
+    from os.path import commonprefix
+    import itertools as it
 
     # probably an efficient way to do this with a trie
 
@@ -662,7 +755,6 @@ def _best_prefix_transform(set1, target_set2):
     # On the Maximum Common Embedded Subtree Problem for Ordered Trees
     # https://pdfs.semanticscholar.org/0b6e/061af02353f7d9b887f9a378be70be64d165.pdf
 
-    from os.path import commonprefix
     prefixes1 = commonprefix(list(set1)).split('.')
     prefixes2 = commonprefix(list(target_set2)).split('.')
 
@@ -692,7 +784,6 @@ def _best_prefix_transform(set1, target_set2):
     def remove_prefix(items, prefix):
         return {k[len(prefix):] if k.startswith(prefix) else k for k in items}
 
-    import itertools as it
     found_cand = []
     for i1, i2 in it.product(range(len(prefixes1) + 1), range(len(prefixes2) + 1)):
         if i1 == 0 and i2 == 0:

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Export component of the Pytorch exporter.
 
@@ -24,9 +23,7 @@ CommandLine:
     xdoctest -m torch_liberator.exporter export_model_code
     xdoctest -m torch_liberator.exporter all
 """
-from __future__ import absolute_import, division, print_function, unicode_literals
 import ast
-import six  # NOQA
 import re
 import hashlib
 import io
@@ -84,10 +81,7 @@ def export_model_code(dpath, model, initkw=None, export_modules=[]):
         >>> mod_fname = (basename(static_modpath))
         >>> print('mod_fname = {!r}'.format(mod_fname))
         >>> if torchvision.__version__ == '0.2.2':
-        >>>     if six.PY2:
-        >>>         assert mod_fname == 'DenseNet_b7ec43.py', 'got={}'.format(mod_fname)
-        >>>     else:
-        >>>         assert mod_fname == 'DenseNet_256629.py', 'got={}'.format(mod_fname)
+        >>>     assert mod_fname == 'DenseNet_256629.py', 'got={}'.format(mod_fname)
         >>> # now the module can be loaded
         >>> module = ub.import_module_from_path(static_modpath)
         >>> loaded = module.make()
