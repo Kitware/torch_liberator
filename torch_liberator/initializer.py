@@ -1018,8 +1018,8 @@ def maximum_common_ordered_subpaths(paths1, paths2, sep='.', mode='embedding'):
 
 def paths_to_otree(paths, sep):
     import networkx as nx
-    # tree = nx.OrderedDiGraph()
-    tree = nx.DiGraph()
+    tree = nx.OrderedDiGraph()
+    # tree = nx.DiGraph()
     for path in sorted(paths):
         parts = tuple(path.split(sep))
         node_path = []
