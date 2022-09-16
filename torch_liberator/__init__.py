@@ -1,8 +1,8 @@
 """
-mkinit ~/code/torch_liberator/torch_liberator/__init__.py -w
+mkinit torch_liberator -w
 """
 
-__version__ = '0.1.3'
+__version__ = '0.2.0'
 
 from torch_liberator import deployer
 from torch_liberator import exporter

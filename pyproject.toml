@@ -1,28 +1,34 @@
 [build-system]
-requires = [ "setuptools>=41.0.1", "scikit-build>=0.9.0", "ninja>=1.10.2", "cmake>=3.21.2", "cython>=0.29.24"]
+requires = [ "setuptools>=41.0.1",]
+build-backend = "setuptools.build_meta"
 
-[tool.cibuildwheel]
-build = "cp36-* cp37-* cp38-* cp39-* cp310-*"
-build-frontend = "build"
-skip = "pp* *-musllinux_*"
-build-verbosity = 1
-test-requires = [ "-r requirements/tests.txt",]
-test-command = "python {project}/run_tests.py"
-archs = ["x86_64"]
-container-engine = "podman"
+#[tool.cibuildwheel]
+#build = "cp36-* cp37-* cp38-* cp39-* cp310-*"
+#build-frontend = "build"
+#skip = "pp* *-musllinux_*"
+#build-verbosity = 1
+#test-requires = [ "-r requirements/tests.txt",]
+#test-command = "python {project}/run_tests.py"
+#archs = ["x86_64"]
+#description = "The torch_liberator Module"
+#container-engine = "podman"
 
 [tool.mypy]
 ignore_missing_imports = true
 
 [tool.xcookie]
-tags = [ "kitware", "binpy", "gitlab",]
+tags = [ "kitware", "purepy", "gitlab",]
 mod_name = "torch_liberator"
 repo_name = "torch_liberator"
 rel_mod_parent_dpath = "."
 os = [ "linux",]
 min_python = 3.6
 license = "Apache 2"
+description = "The torch liberator module"
+author = "Jon Crall"
+author_email = "jon.crall@kitware.com"
 dev_status = "alpha"
+url = "https://gitlab.kitware.com/computer-vision/torch_liberator"
 
 [tool.pytest.ini_options]
 addopts = "-p no:doctest --xdoctest --xdoctest-style=google --ignore-glob=setup.py --ignore-glob=dev"

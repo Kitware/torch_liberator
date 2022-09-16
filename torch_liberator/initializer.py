@@ -841,7 +841,8 @@ def maximum_common_ordered_subpaths(paths1, paths2, sep='.', mode='embedding'):
         >>> mapping = ub.dzip(subpaths1, subpaths2)
         >>> print('mapping = {}'.format(ub.repr2(mapping, nl=1)))
     """
-    from torch_liberator import _nx_ext_v2
+    from networkx_algo_common_subtree import maximum_common_ordered_subtree_embedding
+    from networkx_algo_common_subtree import maximum_common_ordered_subtree_isomorphism
 
     # the longest common balanced sequence problem
     node_affinity = _common_suffix_affinity
@@ -852,9 +853,9 @@ def maximum_common_ordered_subpaths(paths1, paths2, sep='.', mode='embedding'):
     tree2 = paths_to_otree(paths2, sep)
 
     if mode == 'embedding':
-        subtree1, subtree2, value = _nx_ext_v2.maximum_common_ordered_subtree_embedding(tree1, tree2, node_affinity=node_affinity)
+        subtree1, subtree2, value = maximum_common_ordered_subtree_embedding(tree1, tree2, node_affinity=node_affinity)
     elif mode == 'isomorphism':
-        subtree1, subtree2, value = _nx_ext_v2.maximum_common_ordered_subtree_isomorphism(tree1, tree2, node_affinity=node_affinity)
+        subtree1, subtree2, value = maximum_common_ordered_subtree_isomorphism(tree1, tree2, node_affinity=node_affinity)
     else:
         raise KeyError(mode)
 

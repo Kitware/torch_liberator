@@ -5,7 +5,11 @@ We are currently working on porting this changelog to the specifications in
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## Version 0.1.2 - Unreleased
+## Version 0.2.0 - Unreleased
+
+### Changed:
+
+* Moved implementation of the backend maximum common subtree algorithm to `https://github.com/Erotemic/networkx_algo_common_subtree`.
 
 
 ## Version 0.1.1 - Released 2021-11-01
