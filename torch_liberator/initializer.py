@@ -112,6 +112,7 @@ def load_partial_state(model, model_state_dict, leftover=None,
         mangled, i.e. "shoved-in" as best as possible.
 
     Example:
+        >>> from torch_liberator.initializer import load_partial_state
         >>> import torchvision
         >>> import torch
         >>> resnet50 = torchvision.models.resnet50()
@@ -133,8 +134,8 @@ def load_partial_state(model, model_state_dict, leftover=None,
         >>> with ub.Timer(verbose=2, label='embedding'):
         >>>     load_partial_state(model, model_state_dict, association='embedding', verbose=0)
 
-        >>> load_partial_state(model, model_state_dict, association='prefix-hack', verbose=1)
-        >>> load_partial_state(model, model_state_dict, association='module-hack', verbose=1)
+        >>> _ = load_partial_state(model, model_state_dict, association='prefix-hack', verbose=1)
+        >>> _ = load_partial_state(model, model_state_dict, association='module-hack', verbose=1)
     """
     if association is None:
         association = 'module-hack'  # old default
@@ -752,6 +753,7 @@ def maximum_common_ordered_subpaths(paths1, paths2, sep='.', mode='embedding'):
         >>> mapping = ub.dzip(subpaths1, subpaths2)
         >>> print('isomorphism mapping = {}'.format(ub.repr2(mapping, nl=1)))
 
+    Ignore:
         if 0:
             import timerit
             ti = timerit.Timerit(2, bestof=2, verbose=2)
@@ -761,7 +763,6 @@ def maximum_common_ordered_subpaths(paths1, paths2, sep='.', mode='embedding'):
             for timer in ti.reset('isomorphism'):
                 with timer:
                     maximum_common_ordered_subpaths(paths1, paths2, mode='isomorphism')
-
 
         from torch_liberator.initializer import *  # NOQA
         tree1 = paths_to_otree(paths1, sep)

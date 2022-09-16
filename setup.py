@@ -222,7 +222,7 @@ if __name__ == "__main__":
     setupkw["author"] = "joncrall"
     setupkw["author_email"] = "jon.crall@kitware.com"
     setupkw["url"] = "https://gitlab.kitware.com/computer-vision/torch_liberator"
-    setupkw["description"] = "A module cut from xcookie"
+    setupkw["description"] = "The torch_liberator module"
     setupkw["long_description"] = parse_description()
     setupkw["long_description_content_type"] = "text/x-rst"
     setupkw["license"] = "Apache 2"
