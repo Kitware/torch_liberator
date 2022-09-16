@@ -442,7 +442,7 @@ class Pretrained(object):
         fpath (str | PathLike): location of the pretrained weights file.
 
             This can be a pytorch '.pt' file containing the model state, a path
-            to a deploy '.zip' file.
+            to a deploy '.zip' file. (soon a pytorch package).
 
             While it is best practice to use an explicit filepath, we do allow
             `fpath` be a "fuzzy" glob string as long as the pattern resolves to
@@ -466,6 +466,67 @@ class Pretrained(object):
             If False, the isomorphism algorithm is run directly on the
             network graphs. This can be slow. When True common things that are
             usually true in pytorch models are used to speedup the computation.
+
+    Example:
+        >>> import torchvision
+        >>> import torch
+        >>> import ubelt as ub
+        >>> dpath = ub.Path.appdir('torch_liberator/doctests/pretrained').ensuredir()
+        >>> #
+        >>> # Setup:
+        >>> # Imagine we have trained a custom model and a trained state to disk
+        >>> class CustomModel(torch.nn.Module):
+        >>>     def __init__(self, classes=1000, width_per_group=64):
+        >>>         super().__init__()
+        >>>         self.module = torchvision.models.resnet50(num_classes=classes, width_per_group=width_per_group)
+        >>>         self.extra = torch.nn.Linear(1, 1)
+        >>> model1 = CustomModel()
+        >>> model_state_dict = model1.state_dict()
+        >>> checkpoint_fpath = dpath / 'checkpoint.ckpt'
+        >>> with open(checkpoint_fpath, 'wb') as file:
+        >>>     torch.save(model_state_dict, file)
+        >>> #
+        >>> # Problem:
+        >>> # Now we have a similar new model but its slightly different.
+        >>> # We would like to be able to use as much of the pretrained state
+        >>> # as possible.
+        >>> class SuperCustomModel(torch.nn.Module):
+        >>>     def __init__(self, classes=1000, width_per_group=64):
+        >>>         super().__init__()
+        >>>         self.orig = CustomModel(classes=classes, width_per_group=width_per_group)
+        >>>         self.extra3 = torch.nn.Linear(3, 5)
+        >>> model2 = SuperCustomModel(classes=50, width_per_group=128)
+        >>> #
+        >>> # Solution:
+        >>> # Use torch_liberator.Pretrained to do partial weight loading.
+        >>> from torch_liberator import Pretrained
+        >>> # Just point it at the checkpoint path
+        >>> initializer = Pretrained(checkpoint_fpath)
+        >>> # and run it on the model, it will output a summary
+        >>> # detailing what it was able to do. The returned info
+        >>> # gives you more detailed information including the mapping.
+        >>> # from the checkpoint state to the model state dict keys.
+        >>> info = initializer.forward(model2)  # xdoctest: +IGNORE_WANT
+        Loading data onto device=None from fpath=...cache/torch_liberator/doctests/pretrained/checkpoint.ckpt...
+        Pretrained weights are a partial fit
+        Initializing 35 unused keys using noop
+        load partial state (other -> self) summary: {
+            'association': 'isomorphism',
+            'leftover': 'noop',
+            'mangle': True,
+            'len_nodes_self': 324,
+            'len_nodes_other': 322,
+            'len_mapping': 322,
+            'seen': {
+                'full_add': 144,
+                'partial_add_all': 144,
+                'skipped': 33,
+                'partial_add_some': 1,
+            },
+            'self_unset': 35,
+            'other_unused': 33,
+        }
+
 
     Example:
         >>> from torch_liberator.initializer import Pretrained
