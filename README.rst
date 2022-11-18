@@ -3,18 +3,19 @@ Torch Liberator - Deploy PyTorch Models
 
 |GitlabCIPipeline| |GitlabCICoverage| |Pypi| |Downloads| 
 
-+----------------------+------------------------------------------------------------+
-| Main Page            | https://gitlab.kitware.com/computer-vision/torch_liberator |
-+----------------------+------------------------------------------------------------+
-| Github Mirror        | https://github.com/Kitware/torch_liberator                 |
-+----------------------+------------------------------------------------------------+
-| Pypi                 | https://pypi.org/project/torch_liberator                   |
-+----------------------+------------------------------------------------------------+
-| Torch Hackathon 2021 | `Youtube Video`_ and `Google Slides`_                      |
-+----------------------+------------------------------------------------------------+
++----------------------+-------------------------------------------------------------+
+| Main Page            | https://gitlab.kitware.com/computer-vision/torch_liberator  |
++----------------------+-------------------------------------------------------------+
+| Github Mirror        | https://github.com/Kitware/torch_liberator                  |
++----------------------+-------------------------------------------------------------+
+| Pypi                 | https://pypi.org/project/torch_liberator                    |
++----------------------+-------------------------------------------------------------+
+| Torch Hackathon 2021 | `Youtube Video`_, `Google Slides`_, and `Submission Page`_  |
++----------------------+-------------------------------------------------------------+
 
 .. _Youtube Video: https://www.youtube.com/watch?v=GQqtn61iNsc
 .. _Google Slides: https://docs.google.com/presentation/d/1w9XHkPjtLRj29dw50WP0rSHRRlEfhksP_Sf8XldTSYE
+.. _Submission Page: https://devpost.com/software/torchliberator-partial-weight-loading
 
 Torch Liberator is a Python module containing a set of tools for reading and
 writing relevant parts of deep networks.
