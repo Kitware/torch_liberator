@@ -635,18 +635,8 @@ class Pretrained(object):
                         'but got cands{!r}'.format(fpath, cands))
         return fpath
 
-    def forward(self, model, verbose=None):
-        """
-        Apply the pretrained weights (perhaps partially) to the model
-
-        Returns:
-            Dict: detailed information about how initialization was applied.
-        """
+    def load_state_dict(self, main_device_id=None):
         from torch_liberator import util
-        if verbose is None:
-            verbose = self.verbose
-
-        main_device_id = _main_device_id_from_data(model)
         fpath = self._rectify_fpath()
         try:
             file = util.zopen(fpath, 'rb', seekable=True)
@@ -671,6 +661,21 @@ class Pretrained(object):
                     'model_state_dict or weights. Root keys are {}'.format(
                         sorted(model_state_dict.keys())
                     ))
+        return model_state_dict
+
+    def forward(self, model, verbose=None):
+        """
+        Apply the pretrained weights (perhaps partially) to the model
+
+        Returns:
+            Dict: detailed information about how initialization was applied.
+        """
+        if verbose is None:
+            verbose = self.verbose
+
+        main_device_id = _main_device_id_from_data(model)
+        model_state_dict = self.load_state_dict(main_device_id)
+
         # Remove any DataParallel / DataSerial
         raw_model = _raw_model(model)
         info = load_partial_state(
