@@ -3,7 +3,7 @@ if __name__ == '__main__':
     import pytest
     import sys
     package_name = 'torch_liberator'
-    mod_dpath = package_name
+    mod_dpath = 'torch_liberator'
     test_dpath = 'tests'
     pytest_args = [
         '--cov-config', 'pyproject.toml',
