@@ -1,12 +1,12 @@
 from torch_liberator.initializer import Pretrained
 import ubelt as ub
 import torch
-import torchvision
 
 
 class CustomModel(torch.nn.Module):
     def __init__(self, classes=1000, width_per_group=64):
         super().__init__()
+        import torchvision
         self.module = torchvision.models.resnet50(num_classes=classes, width_per_group=width_per_group)
         self.extra = torch.nn.Linear(1, 1)
 
@@ -20,6 +20,11 @@ class SuperCustomModel(torch.nn.Module):
 
 def test_pretrained_with_torch_checkpoint():
     # TODO: add ability to ingest torch packages.
+    try:
+        import torchvision  # NOQA
+    except ImportError:
+        import pytest
+        pytest.skip('no torchvision')
 
     dpath = ub.Path.appdir('torch_liberator/unittests/pretrained').ensuredir()
     model1 = CustomModel()
