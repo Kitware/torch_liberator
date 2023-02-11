@@ -35,7 +35,7 @@ stages:
   - python -m build --wheel --outdir wheelhouse
   artifacts:
     paths:
-    - wheelhouse/*.whl
+    - ./wheelhouse/torch_liberator*.whl
 .test_template: &test_template
   <<: *common_template
   stage: test
