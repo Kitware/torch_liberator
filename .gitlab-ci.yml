@@ -55,19 +55,35 @@ stages:
     pip install pygments
     python --version  # Print out python version for debugging
   script:
+  - echo "Finding the path to the wheel"
   - ls wheelhouse || echo "wheelhouse does not exist"
-  - pip install tomli ubelt pkginfo
-  - MOD_NAME=$(python -c "import tomli; print(tomli.load(open('pyproject.toml', 'rb'))['tool']['xcookie']['mod_name'])")
-  - WHEEL_FPATH=$(python -c "import pathlib; print(str(sorted(pathlib.Path('wheelhouse').glob('$MOD_NAME*.whl'))[-1]).replace(chr(92),
-    chr(47)))")
-  - MOD_VERSION=$(python -c "from pkginfo import Wheel; print(Wheel('$WHEEL_FPATH').version)")
-  - INSTALL_EXTRAS=tests
+  - echo "Installing helpers"
+  - pip install pip setuptools>=0.8 setuptools_scm wheel build -U
+  - pip install tomli pkginfo
+  - export MOD_NAME=torch_liberator
   - echo "MOD_NAME=$MOD_NAME"
+  - export WHEEL_FPATH=$(python -c "import pathlib; print(str(sorted(pathlib.Path('wheelhouse').glob('$MOD_NAME*.whl'))[-1]).replace(chr(92),
+    chr(47)))")
   - echo "WHEEL_FPATH=$WHEEL_FPATH"
+  - export MOD_VERSION=$(python -c "from pkginfo import Wheel; print(Wheel('$WHEEL_FPATH').version)")
   - echo "MOD_VERSION=$MOD_VERSION"
   - pip install --prefer-binary "$MOD_NAME[$INSTALL_EXTRAS]==$MOD_VERSION" -f wheelhouse
+  - echo "Install finished."
+  - echo "Creating test sandbox directory"
+  - WORKSPACE_DNAME="sandbox"
+  - echo "WORKSPACE_DNAME=$WORKSPACE_DNAME"
+  - mkdir -p $WORKSPACE_DNAME
+  - echo "cd-ing into the workspace"
+  - cd $WORKSPACE_DNAME
+  - pwd
+  - ls -al
+  - '# Get the path to the installed package and run the tests'
+  - MOD_DPATH=$(python -c "import torch_liberator, os; print(os.path.dirname(torch_liberator.__file__))")
+  - echo "MOD_DPATH = $MOD_DPATH"
+  - echo "running the pytest command inside the workspace"
   - |-
-    mkdir -p sandbox && cd sandbox && pytest -s --xdoctest --xdoctest-verbose=3 --cov-config ../pyproject.toml --cov-report html --cov-report term --cov="$MOD_NAME" "$(python -c "import ubelt; print(ubelt.modname_to_modpath('${MOD_NAME}'))")" ../tests && cd ..
+    python -m pytest -p pytester -p no:doctest --xdoctest --cov-config ../pyproject.toml --cov-report term --cov="$MOD_NAME" "$MOD_DPATH" ../tests
+  - echo "pytest command finished, moving the coverage file to the repo root"
 .test_full-loose_template: &test_full-loose_template
   <<: *test_template
   before_script:
@@ -83,19 +99,35 @@ stages:
     pip install pygments
     python --version  # Print out python version for debugging
   script:
+  - echo "Finding the path to the wheel"
   - ls wheelhouse || echo "wheelhouse does not exist"
-  - pip install tomli ubelt pkginfo
-  - MOD_NAME=$(python -c "import tomli; print(tomli.load(open('pyproject.toml', 'rb'))['tool']['xcookie']['mod_name'])")
-  - WHEEL_FPATH=$(python -c "import pathlib; print(str(sorted(pathlib.Path('wheelhouse').glob('$MOD_NAME*.whl'))[-1]).replace(chr(92),
-    chr(47)))")
-  - MOD_VERSION=$(python -c "from pkginfo import Wheel; print(Wheel('$WHEEL_FPATH').version)")
-  - INSTALL_EXTRAS=tests,optional
+  - echo "Installing helpers"
+  - pip install pip setuptools>=0.8 setuptools_scm wheel build -U
+  - pip install tomli pkginfo
+  - export MOD_NAME=torch_liberator
   - echo "MOD_NAME=$MOD_NAME"
+  - export WHEEL_FPATH=$(python -c "import pathlib; print(str(sorted(pathlib.Path('wheelhouse').glob('$MOD_NAME*.whl'))[-1]).replace(chr(92),
+    chr(47)))")
   - echo "WHEEL_FPATH=$WHEEL_FPATH"
+  - export MOD_VERSION=$(python -c "from pkginfo import Wheel; print(Wheel('$WHEEL_FPATH').version)")
   - echo "MOD_VERSION=$MOD_VERSION"
   - pip install --prefer-binary "$MOD_NAME[$INSTALL_EXTRAS]==$MOD_VERSION" -f wheelhouse
+  - echo "Install finished."
+  - echo "Creating test sandbox directory"
+  - WORKSPACE_DNAME="sandbox"
+  - echo "WORKSPACE_DNAME=$WORKSPACE_DNAME"
+  - mkdir -p $WORKSPACE_DNAME
+  - echo "cd-ing into the workspace"
+  - cd $WORKSPACE_DNAME
+  - pwd
+  - ls -al
+  - '# Get the path to the installed package and run the tests'
+  - MOD_DPATH=$(python -c "import torch_liberator, os; print(os.path.dirname(torch_liberator.__file__))")
+  - echo "MOD_DPATH = $MOD_DPATH"
+  - echo "running the pytest command inside the workspace"
   - |-
-    mkdir -p sandbox && cd sandbox && pytest -s --xdoctest --xdoctest-verbose=3 --cov-config ../pyproject.toml --cov-report html --cov-report term --cov="$MOD_NAME" "$(python -c "import ubelt; print(ubelt.modname_to_modpath('${MOD_NAME}'))")" ../tests && cd ..
+    python -m pytest -p pytester -p no:doctest --xdoctest --cov-config ../pyproject.toml --cov-report term --cov="$MOD_NAME" "$MOD_DPATH" ../tests
+  - echo "pytest command finished, moving the coverage file to the repo root"
 .test_minimal-strict_template: &test_minimal-strict_template
   <<: *test_template
   before_script:
@@ -111,19 +143,35 @@ stages:
     pip install pygments
     python --version  # Print out python version for debugging
   script:
+  - echo "Finding the path to the wheel"
   - ls wheelhouse || echo "wheelhouse does not exist"
-  - pip install tomli ubelt pkginfo
-  - MOD_NAME=$(python -c "import tomli; print(tomli.load(open('pyproject.toml', 'rb'))['tool']['xcookie']['mod_name'])")
-  - WHEEL_FPATH=$(python -c "import pathlib; print(str(sorted(pathlib.Path('wheelhouse').glob('$MOD_NAME*.whl'))[-1]).replace(chr(92),
-    chr(47)))")
-  - MOD_VERSION=$(python -c "from pkginfo import Wheel; print(Wheel('$WHEEL_FPATH').version)")
-  - INSTALL_EXTRAS=tests-strict,runtime-strict
+  - echo "Installing helpers"
+  - pip install pip setuptools>=0.8 setuptools_scm wheel build -U
+  - pip install tomli pkginfo
+  - export MOD_NAME=torch_liberator
   - echo "MOD_NAME=$MOD_NAME"
+  - export WHEEL_FPATH=$(python -c "import pathlib; print(str(sorted(pathlib.Path('wheelhouse').glob('$MOD_NAME*.whl'))[-1]).replace(chr(92),
+    chr(47)))")
   - echo "WHEEL_FPATH=$WHEEL_FPATH"
+  - export MOD_VERSION=$(python -c "from pkginfo import Wheel; print(Wheel('$WHEEL_FPATH').version)")
   - echo "MOD_VERSION=$MOD_VERSION"
   - pip install --prefer-binary "$MOD_NAME[$INSTALL_EXTRAS]==$MOD_VERSION" -f wheelhouse
+  - echo "Install finished."
+  - echo "Creating test sandbox directory"
+  - WORKSPACE_DNAME="sandbox"
+  - echo "WORKSPACE_DNAME=$WORKSPACE_DNAME"
+  - mkdir -p $WORKSPACE_DNAME
+  - echo "cd-ing into the workspace"
+  - cd $WORKSPACE_DNAME
+  - pwd
+  - ls -al
+  - '# Get the path to the installed package and run the tests'
+  - MOD_DPATH=$(python -c "import torch_liberator, os; print(os.path.dirname(torch_liberator.__file__))")
+  - echo "MOD_DPATH = $MOD_DPATH"
+  - echo "running the pytest command inside the workspace"
   - |-
-    mkdir -p sandbox && cd sandbox && pytest -s --xdoctest --xdoctest-verbose=3 --cov-config ../pyproject.toml --cov-report html --cov-report term --cov="$MOD_NAME" "$(python -c "import ubelt; print(ubelt.modname_to_modpath('${MOD_NAME}'))")" ../tests && cd ..
+    python -m pytest -p pytester -p no:doctest --xdoctest --cov-config ../pyproject.toml --cov-report term --cov="$MOD_NAME" "$MOD_DPATH" ../tests
+  - echo "pytest command finished, moving the coverage file to the repo root"
 .test_full-strict_template: &test_full-strict_template
   <<: *test_template
   before_script:
@@ -139,19 +187,35 @@ stages:
     pip install pygments
     python --version  # Print out python version for debugging
   script:
+  - echo "Finding the path to the wheel"
   - ls wheelhouse || echo "wheelhouse does not exist"
-  - pip install tomli ubelt pkginfo
-  - MOD_NAME=$(python -c "import tomli; print(tomli.load(open('pyproject.toml', 'rb'))['tool']['xcookie']['mod_name'])")
-  - WHEEL_FPATH=$(python -c "import pathlib; print(str(sorted(pathlib.Path('wheelhouse').glob('$MOD_NAME*.whl'))[-1]).replace(chr(92),
-    chr(47)))")
-  - MOD_VERSION=$(python -c "from pkginfo import Wheel; print(Wheel('$WHEEL_FPATH').version)")
-  - INSTALL_EXTRAS=tests-strict,runtime-strict,optional-strict
+  - echo "Installing helpers"
+  - pip install pip setuptools>=0.8 setuptools_scm wheel build -U
+  - pip install tomli pkginfo
+  - export MOD_NAME=torch_liberator
   - echo "MOD_NAME=$MOD_NAME"
+  - export WHEEL_FPATH=$(python -c "import pathlib; print(str(sorted(pathlib.Path('wheelhouse').glob('$MOD_NAME*.whl'))[-1]).replace(chr(92),
+    chr(47)))")
   - echo "WHEEL_FPATH=$WHEEL_FPATH"
+  - export MOD_VERSION=$(python -c "from pkginfo import Wheel; print(Wheel('$WHEEL_FPATH').version)")
   - echo "MOD_VERSION=$MOD_VERSION"
   - pip install --prefer-binary "$MOD_NAME[$INSTALL_EXTRAS]==$MOD_VERSION" -f wheelhouse
+  - echo "Install finished."
+  - echo "Creating test sandbox directory"
+  - WORKSPACE_DNAME="sandbox"
+  - echo "WORKSPACE_DNAME=$WORKSPACE_DNAME"
+  - mkdir -p $WORKSPACE_DNAME
+  - echo "cd-ing into the workspace"
+  - cd $WORKSPACE_DNAME
+  - pwd
+  - ls -al
+  - '# Get the path to the installed package and run the tests'
+  - MOD_DPATH=$(python -c "import torch_liberator, os; print(os.path.dirname(torch_liberator.__file__))")
+  - echo "MOD_DPATH = $MOD_DPATH"
+  - echo "running the pytest command inside the workspace"
   - |-
-    mkdir -p sandbox && cd sandbox && pytest -s --xdoctest --xdoctest-verbose=3 --cov-config ../pyproject.toml --cov-report html --cov-report term --cov="$MOD_NAME" "$(python -c "import ubelt; print(ubelt.modname_to_modpath('${MOD_NAME}'))")" ../tests && cd ..
+    python -m pytest -p pytester -p no:doctest --xdoctest --cov-config ../pyproject.toml --cov-report term --cov="$MOD_NAME" "$MOD_DPATH" ../tests
+  - echo "pytest command finished, moving the coverage file to the repo root"
 build/cp37-linux-x86_64:
   <<: *build_template
   image: python:3.7
