@@ -65,7 +65,7 @@ stages:
   - echo "MOD_NAME=$MOD_NAME"
   - echo "WHEEL_FPATH=$WHEEL_FPATH"
   - echo "MOD_VERSION=$MOD_VERSION"
-  - pip install "$MOD_NAME[$INSTALL_EXTRAS]==$MOD_VERSION" -f wheelhouse
+  - pip install --prefer-binary "$MOD_NAME[$INSTALL_EXTRAS]==$MOD_VERSION" -f wheelhouse
   - |-
     mkdir -p sandbox && cd sandbox && pytest -s --xdoctest --xdoctest-verbose=3 --cov-config ../pyproject.toml --cov-report html --cov-report term --cov="$MOD_NAME" "$(python -c "import ubelt; print(ubelt.modname_to_modpath('${MOD_NAME}'))")" ../tests && cd ..
 .test_full-loose_template: &test_full-loose_template
@@ -93,7 +93,7 @@ stages:
   - echo "MOD_NAME=$MOD_NAME"
   - echo "WHEEL_FPATH=$WHEEL_FPATH"
   - echo "MOD_VERSION=$MOD_VERSION"
-  - pip install "$MOD_NAME[$INSTALL_EXTRAS]==$MOD_VERSION" -f wheelhouse
+  - pip install --prefer-binary "$MOD_NAME[$INSTALL_EXTRAS]==$MOD_VERSION" -f wheelhouse
   - |-
     mkdir -p sandbox && cd sandbox && pytest -s --xdoctest --xdoctest-verbose=3 --cov-config ../pyproject.toml --cov-report html --cov-report term --cov="$MOD_NAME" "$(python -c "import ubelt; print(ubelt.modname_to_modpath('${MOD_NAME}'))")" ../tests && cd ..
 .test_minimal-strict_template: &test_minimal-strict_template
@@ -121,7 +121,7 @@ stages:
   - echo "MOD_NAME=$MOD_NAME"
   - echo "WHEEL_FPATH=$WHEEL_FPATH"
   - echo "MOD_VERSION=$MOD_VERSION"
-  - pip install "$MOD_NAME[$INSTALL_EXTRAS]==$MOD_VERSION" -f wheelhouse
+  - pip install --prefer-binary "$MOD_NAME[$INSTALL_EXTRAS]==$MOD_VERSION" -f wheelhouse
   - |-
     mkdir -p sandbox && cd sandbox && pytest -s --xdoctest --xdoctest-verbose=3 --cov-config ../pyproject.toml --cov-report html --cov-report term --cov="$MOD_NAME" "$(python -c "import ubelt; print(ubelt.modname_to_modpath('${MOD_NAME}'))")" ../tests && cd ..
 .test_full-strict_template: &test_full-strict_template
@@ -149,7 +149,7 @@ stages:
   - echo "MOD_NAME=$MOD_NAME"
   - echo "WHEEL_FPATH=$WHEEL_FPATH"
   - echo "MOD_VERSION=$MOD_VERSION"
-  - pip install "$MOD_NAME[$INSTALL_EXTRAS]==$MOD_VERSION" -f wheelhouse
+  - pip install --prefer-binary "$MOD_NAME[$INSTALL_EXTRAS]==$MOD_VERSION" -f wheelhouse
   - |-
     mkdir -p sandbox && cd sandbox && pytest -s --xdoctest --xdoctest-verbose=3 --cov-config ../pyproject.toml --cov-report html --cov-report term --cov="$MOD_NAME" "$(python -c "import ubelt; print(ubelt.modname_to_modpath('${MOD_NAME}'))")" ../tests && cd ..
 build/cp37-linux-x86_64:
