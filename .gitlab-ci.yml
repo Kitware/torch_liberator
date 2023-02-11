@@ -55,6 +55,7 @@ stages:
     pip install pygments
     python --version  # Print out python version for debugging
   script:
+  - export INSTALL_EXTRAS=tests
   - echo "Finding the path to the wheel"
   - ls wheelhouse || echo "wheelhouse does not exist"
   - echo "Installing helpers"
@@ -99,6 +100,7 @@ stages:
     pip install pygments
     python --version  # Print out python version for debugging
   script:
+  - export INSTALL_EXTRAS=tests,optional
   - echo "Finding the path to the wheel"
   - ls wheelhouse || echo "wheelhouse does not exist"
   - echo "Installing helpers"
@@ -143,6 +145,7 @@ stages:
     pip install pygments
     python --version  # Print out python version for debugging
   script:
+  - export INSTALL_EXTRAS=tests-strict,runtime-strict
   - echo "Finding the path to the wheel"
   - ls wheelhouse || echo "wheelhouse does not exist"
   - echo "Installing helpers"
@@ -187,6 +190,7 @@ stages:
     pip install pygments
     python --version  # Print out python version for debugging
   script:
+  - export INSTALL_EXTRAS=tests-strict,runtime-strict,optional-strict
   - echo "Finding the path to the wheel"
   - ls wheelhouse || echo "wheelhouse does not exist"
   - echo "Installing helpers"
