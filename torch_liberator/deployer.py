@@ -21,6 +21,7 @@ CommandLine:
 
 
 Example:
+    >>> # xdoctest: +REQUIRES(module:torchvision)
     >>> from torch_liberator.deployer import *
     >>> import torch_liberator
     >>> from torchvision import models

@@ -5,7 +5,13 @@ We are currently working on porting this changelog to the specifications in
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## Version 0.2.0 - Unreleased
+## Version 0.2.1 - Unreleased
+
+### Fixed
+* Work around networkx removal of OrderedDiGraph
+
+
+## Version 0.2.0 - Released 2022-09-16
 
 ### Changed:
 

@@ -122,6 +122,7 @@ def load_partial_state(model, model_state_dict, leftover='noop',
         mangled, i.e. "shoved-in" as best as possible.
 
     Example:
+        >>> # xdoctest: +REQUIRES(module:torchvision)
         >>> from torch_liberator.initializer import load_partial_state
         >>> import torchvision
         >>> import torch
@@ -468,6 +469,7 @@ class Pretrained(object):
             usually true in pytorch models are used to speedup the computation.
 
     Example:
+        >>> # xdoctest: +REQUIRES(module:torchvision)
         >>> import torchvision
         >>> import torch
         >>> import ubelt as ub
@@ -529,6 +531,7 @@ class Pretrained(object):
 
 
     Example:
+        >>> # xdoctest: +REQUIRES(module:torchvision)
         >>> from torch_liberator.initializer import Pretrained
         >>> import torchvision
         >>> import torch
@@ -635,18 +638,8 @@ class Pretrained(object):
                         'but got cands{!r}'.format(fpath, cands))
         return fpath
 
-    def forward(self, model, verbose=None):
-        """
-        Apply the pretrained weights (perhaps partially) to the model
-
-        Returns:
-            Dict: detailed information about how initialization was applied.
-        """
+    def load_state_dict(self, main_device_id=None):
         from torch_liberator import util
-        if verbose is None:
-            verbose = self.verbose
-
-        main_device_id = _main_device_id_from_data(model)
         fpath = self._rectify_fpath()
         try:
             file = util.zopen(fpath, 'rb', seekable=True)
@@ -671,6 +664,21 @@ class Pretrained(object):
                     'model_state_dict or weights. Root keys are {}'.format(
                         sorted(model_state_dict.keys())
                     ))
+        return model_state_dict
+
+    def forward(self, model, verbose=None):
+        """
+        Apply the pretrained weights (perhaps partially) to the model
+
+        Returns:
+            Dict: detailed information about how initialization was applied.
+        """
+        if verbose is None:
+            verbose = self.verbose
+
+        main_device_id = _main_device_id_from_data(model)
+        model_state_dict = self.load_state_dict(main_device_id)
+
         # Remove any DataParallel / DataSerial
         raw_model = _raw_model(model)
         info = load_partial_state(
@@ -892,6 +900,7 @@ def maximum_common_ordered_subpaths(paths1, paths2, sep='.', mode='embedding'):
     """
 
     Example:
+        >>> # xdoctest: +REQUIRES(module:torchvision)
         >>> import torchvision
         >>> resnet50 = torchvision.models.resnet50()
         >>> paths1 = sorted(resnet50.state_dict().keys())
@@ -1018,8 +1027,10 @@ def maximum_common_ordered_subpaths(paths1, paths2, sep='.', mode='embedding'):
 
 def paths_to_otree(paths, sep):
     import networkx as nx
-    tree = nx.OrderedDiGraph()
-    # tree = nx.DiGraph()
+    try:
+        tree = nx.OrderedDiGraph()
+    except AttributeError:
+        tree = nx.DiGraph()
     for path in sorted(paths):
         parts = tuple(path.split(sep))
         node_path = []
