@@ -1,17 +1,15 @@
-# -*- coding: utf-8 -*-
 """
 import liberator
 lib = liberator.Liberator()
 import ubelt as ub
 lib.add_dynamic(ub.zopen)
 print(lib.current_sourcecode())
-
 """
+import io
+import os
 from ubelt.util_mixins import NiceRepr
 from os.path import exists
-import io
 from os.path import join
-import os
 
 
 def split_archive(fpath, ext='.zip'):
