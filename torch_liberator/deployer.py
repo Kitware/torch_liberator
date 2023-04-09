@@ -372,7 +372,7 @@ class DeployedModel(ub.NiceRepr):
         >>> # small library changes it often changes, so we are permissive
         >>> # with this got/want test
         >>> print('model.__module__ = {!r}'.format(model.__module__))
-        model.__module__ = 'deploy_demo_liberator_static_..._.../ToyNet2d_...'
+        model.__module__ = 'deploy_..._..._.../ToyNet2d_...'
 
         model.__module__ = 'deploy_ToyNet2d_mhuhweia_000_.../ToyNet2d_...'
 
@@ -389,7 +389,7 @@ class DeployedModel(ub.NiceRepr):
     def __json__(self):
         if self.path is None:
             if self._info:
-                return ub.repr2(self._info, nl=0)
+                return ub.urepr(self._info, nl=0)
         else:
             return self.path
 
