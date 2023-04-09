@@ -508,7 +508,7 @@ class DeployedModel(ub.NiceRepr):
         if archive_fpath is None:
             raise Exception('deployed snapshot is not in an archive')
         if extract_dpath is None:
-            extract_dpath = ub.ensure_app_cache_dir('torch_liberator/extracted')
+            extract_dpath = ub.Path.appdir('torch_liberator/extracted').ensuredir()
         with zipfile.ZipFile(archive_fpath, 'r') as myzip:
             myzip.extract(internal, extract_dpath)
         temp_fpath = join(extract_dpath, internal)
@@ -663,7 +663,7 @@ class DeployedModel(ub.NiceRepr):
             >>> train_info_fpath = deployed.info['train_info_fpath']
             >>> # Past raw components to custom
             >>> self = DeployedModel.custom(snap_fpath, model, initkw)
-            >>> dpath = ub.ensure_app_cache_dir('torch_liberator', 'tests/_package_custom')
+            >>> dpath = ub.Path.appdir('torch_liberator', 'tests/_package_custom').ensuredir()
             >>> self.package(dpath)
         """
         if isinstance(model, str):
@@ -696,7 +696,7 @@ def _demodata_toy_harn():
     # This will train a toy model with toy data using netharn
     import netharn as nh
     hyper = nh.HyperParams(**{
-        'workdir'     : ub.ensure_app_cache_dir('torch_liberator/tests/deploy'),
+        'workdir'     : ub.Path.appdir('torch_liberator/tests/deploy').ensuredir(),
         'name'        : 'demo_liberator_static',
         'xpu'         : nh.XPU.coerce('cpu'),
         'datasets'    : {'train': nh.data.ToyData2d(size=3, rng=0)},

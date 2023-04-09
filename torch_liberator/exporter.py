@@ -74,7 +74,7 @@ def export_model_code(dpath, model, initkw=None, export_modules=[]):
         >>> from os.path import basename
         >>> initkw = {'growth_rate': 16}
         >>> model = densenet.DenseNet(**initkw)
-        >>> dpath = ub.ensure_app_cache_dir('torch_liberator/tests')
+        >>> dpath = ub.Path.appdir('torch_liberator/tests').ensuredir()
         >>> static_modpath = export_model_code(dpath, model, initkw)
         >>> print('static_modpath = {!r}'.format(static_modpath))
         ...
