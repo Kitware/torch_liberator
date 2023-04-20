@@ -74,7 +74,7 @@ def export_model_code(dpath, model, initkw=None, export_modules=[]):
         >>> from os.path import basename
         >>> initkw = {'growth_rate': 16}
         >>> model = densenet.DenseNet(**initkw)
-        >>> dpath = ub.ensure_app_cache_dir('torch_liberator/tests')
+        >>> dpath = ub.Path.appdir('torch_liberator/tests').ensuredir()
         >>> static_modpath = export_model_code(dpath, model, initkw)
         >>> print('static_modpath = {!r}'.format(static_modpath))
         ...
@@ -103,8 +103,8 @@ def export_model_code(dpath, model, initkw=None, export_modules=[]):
         # First see if we can get away with a simple encoding of initkw
         try:
             # Do not use repr. The text produced is non-deterministic for
-            # dictionaries. Instead, use ub.repr2, which is deterministic.
-            init_text = ub.repr2(initkw, nl=1)
+            # dictionaries. Instead, use ub.urepr, which is deterministic.
+            init_text = ub.urepr(initkw, nl=1)
             eval(init_text, {})
             init_code = ub.codeblock(
                 'initkw = {}'

@@ -1,17 +1,15 @@
-# -*- coding: utf-8 -*-
 """
 import liberator
 lib = liberator.Liberator()
 import ubelt as ub
 lib.add_dynamic(ub.zopen)
 print(lib.current_sourcecode())
-
 """
+import io
+import os
 from ubelt.util_mixins import NiceRepr
 from os.path import exists
-import io
 from os.path import join
-import os
 
 
 def split_archive(fpath, ext='.zip'):
@@ -105,7 +103,7 @@ class zopen(NiceRepr):
         >>> from ubelt.util_zip import *  # NOQA
         >>> import pickle
         >>> import ubelt as ub
-        >>> dpath = ub.ensure_app_cache_dir('ubelt/tests/util_zip')
+        >>> dpath = ub.Path.appdir('ubelt/tests/util_zip').ensuredir()
         >>> dpath = ub.Path(dpath)
         >>> data_fpath = dpath / 'test.pkl'
         >>> data = {'demo': 'data'}
@@ -140,7 +138,7 @@ class zopen(NiceRepr):
         >>> import ubelt as ub
         >>> import json
         >>> import zipfile
-        >>> dpath = ub.ensure_app_cache_dir('ubelt/tests/util_zip')
+        >>> dpath = ub.Path.appdir('ubelt/tests/util_zip').ensuredir()
         >>> infopath = join(dpath, 'info.json')
         >>> ub.writeto(infopath, '{"x": "1"}')
         >>> zippath = join(dpath, 'infozip.zip')
@@ -167,7 +165,7 @@ class zopen(NiceRepr):
         >>> import ubelt as ub
         >>> import json
         >>> import zipfile
-        >>> dpath = ub.ensure_app_cache_dir('ubelt/tests/util_zip')
+        >>> dpath = ub.Path.appdir('ubelt/tests/util_zip').ensuredir()
         >>> textpath = join(dpath, 'seekable_test.txt')
         >>> text = chr(10).join(['line{}'.format(i) for i in range(10)])
         >>> ub.writeto(textpath, text)
@@ -203,7 +201,7 @@ class zopen(NiceRepr):
         >>> from ubelt.util_zip import *  # NOQA
         >>> import ubelt as ub
         >>> import pytest
-        >>> dpath = ub.ensure_app_cache_dir('ubelt/tests/util_zip')
+        >>> dpath = ub.Path.appdir('ubelt/tests/util_zip').ensuredir()
         >>> with pytest.raises(OSError):
         >>>     self = zopen('', 'r')
         >>> # Test open non-zip exsting file
